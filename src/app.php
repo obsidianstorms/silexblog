@@ -30,8 +30,19 @@ $app->register(new Silex\Provider\MonologServiceProvider(), array(
 
 
 /** Routes */
-$app->match('/', 'BasicBlog\Page::index')
-->method('GET|POST');
+$app->get('/', 'BasicBlog\Page\Page::index');
+$app->post('/login', 'BasicBlog\Page\Page::login');
+$app->post('/post', 'BasicBlog\Page\Page::newPost');
+$app->get('/{post_id}', 'BasicBlog\Page\Page::viewPost');
+$app->get('/{post_id}/edit', 'BasicBlog\Page\Page::editPost');
+$app->put('/{post_id}', 'BasicBlog\Page\Page::changePost');
+$app->delete('/{post_id}', 'BasicBlog\Page\Page::removePost');
+$app->post('/{post_id}/comment', 'BasicBlog\Page\Page::newComment');
+$app->get('/{post_id}/{comment_id}', 'BasicBlog\Page\Page::viewComment');
+$app->delete('/{post_id}/{comment_id}', 'BasicBlog\Page\Page::removeComment');
+
+//$app->match('/', 'BasicBlog\Page::index')
+//->method('GET|POST');
 
 
 

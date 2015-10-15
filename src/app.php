@@ -8,16 +8,16 @@ $app = new Silex\Application();
 $app['debug'] = true;
 
 /** Local config values */
-list($dbname, $dbuser, $dbpass) = include_once(__DIR__ . '/../config/config.local.php');
+$settings = include __DIR__ . '/../config/config.local.php';
 
 /** Register providers */
 $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
    'db.options' => array(
        'driver' => 'pdo_mysql',
-       'dbname' => $dbname,
+       'dbname' => $settings['dbname'],
        'host' => 'localhost',
-       'user' => $dbuser,
-       'password' => $dbpass,
+       'user' => $settings['user'],
+       'password' => $settings['password'],
        'charset' => 'utf8',
    )
 ));
@@ -30,10 +30,9 @@ $app->register(new Silex\Provider\MonologServiceProvider(), array(
 
 
 /** Routes */
-$app->match('/', function () use ($app) {
-    $app['monolog']->addInfo('logging example');
-    return 'here';
-})
+$app->match('/', 'BasicBlog\Page::index')
 ->method('GET|POST');
+
+
 
 return $app;

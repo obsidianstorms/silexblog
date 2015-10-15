@@ -29,7 +29,7 @@ class BasicTest extends WebTestCase
 
         $this->assertTrue($client->getResponse()->isOk());
         $this->assertEquals(
-            'Here',
+            'Successful response',
             $client->getResponse()->getContent()
         );
     }

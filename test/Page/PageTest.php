@@ -1,13 +1,13 @@
 <?php
 
-namespace BasicBlog;
+namespace BasicBlog\Page;
 
 use Silex\WebTestCase;
 
 /**
  * Basic test to confirm route functionality
  */
-class BasicTest extends WebTestCase
+class PageTest extends WebTestCase
 {
     /**
      * Boilerplate for Silex application aware functional testing
@@ -16,7 +16,7 @@ class BasicTest extends WebTestCase
      */
     public function createApplication()
     {
-        return require __DIR__ . '/../src/app.php';
+        return require __DIR__ . '/../../src/app.php';
     }
 
     /**
@@ -51,6 +51,8 @@ class BasicTest extends WebTestCase
 
     /**
      * Test newPost page request returns expected value and OK status
+     *
+     * @return int
      */
     public function testNewPost()
     {
@@ -138,6 +140,8 @@ class BasicTest extends WebTestCase
      * Test newComment page request returns expected value and OK status
      *
      * @depends testNewPost
+     *
+     * @return int[]
      */
     public function testNewComment($id)
     {

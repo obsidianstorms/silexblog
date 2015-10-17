@@ -16,203 +16,187 @@ use Mockery as m;
 class PostDataTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * Test getPostDataById() throws InvalidArgumentException if provided
+     * Test fetchPostDataById() throws InvalidArgumentException if provided
      * invalid parameter
      */
-    public function testGetPostDataByIdThrowsInvalidArgumentException()
+    public function testFetchPostDataByIdThrowsInvalidArgumentException()
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
+            PostData::MESSAGE_NOT_INTEGER,
             0
         );
 
-        $someValue = 'string';
-        $object = new PostData();
-        $object->getPostDataById($someValue);
+        $mockId = 'invalidid';
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
 
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+        $object = new PostData($mockApp);
+        $object->fetchPostDataById($mockId);
     }
 
     /**
-     * Test getPostDataById() throws UnexpectedValueException if fail to read
+     * Test fetchPostDataById() throws UnexpectedValueException if fail to read
      * from database
      */
-    public function testGetPostDataByIdThrowsUnexpectedValueException()
+    public function testFetchPostDataByIdThrowsUnexpectedValueException()
     {
         $this->setExpectedException(
             'UnexpectedValueException',
-            'A message of some kind',
-            0
+            PostData::MESSAGE_NO_RESULT_FOUND,
+            1
         );
 
-        $someValue = 1;
-        $object = new PostData();
-        $object->getPostDataById($someValue);
+        $mockId = 1;
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(PostData::SQL_SELECT_SINGLE_POST_BY_ID, [$mockId])
+            ->andReturn(false);
 
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new PostData($mockApp);
+        $object->fetchPostDataById($mockId);
     }
 
     /**
-     * Test getPostDataById() returns array if provided with id
+     * Test fetchPostDataById() returns array if provided with id
      */
-    public function testGetPostDataByIdReturnsData()
+    public function testFetchPostDataByIdReturnsData()
     {
-        $someValue = 1;
-        $object = new PostData();
-        $object->getPostDataById($someValue);
+        $mockReturnedArray = ['key' => 'value'];
+        $mockId = 1;
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(PostData::SQL_SELECT_SINGLE_POST_BY_ID, [$mockId])
+            ->andReturn($mockReturnedArray);
 
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new PostData($mockApp);
+        $returned = $object->fetchPostDataById($mockId);
+
+        $this->assertSame($mockReturnedArray, $returned);
     }
 
     /**
-     * Test createPostData() throws InvalidArgumentException if provided
-     * invalid parameter
+     * Test fetchPostCollectionData() throws UnexpectedValueException if fail
+     * to read from database
      */
-    public function testCreatePostDataThrowsInvalidArgumentException()
+    public function testFetchPostCollectionDataThrowsUnexpectedValueException()
+    {
+        $this->setExpectedException(
+            'UnexpectedValueException',
+            PostData::MESSAGE_NO_RESULT_FOUND,
+            2
+        );
+
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAll')
+            ->with(PostData::SQL_SELECT_ALL_POSTS_SORTED_CREATED_ASC)
+            ->andReturn(false);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new PostData($mockApp);
+        $object->fetchPostCollectionData();
+    }
+
+    /**
+     * Test fetchPostCollectionData() returns array
+     */
+    public function testFetchPostCollectionDataReturnsData()
+    {
+        $mockReturnedArray = [
+            ['key' => 'value'],
+            ['key2' => 'value2'],
+        ];
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAll')
+            ->with(PostData::SQL_SELECT_ALL_POSTS_SORTED_CREATED_ASC)
+            ->andReturn($mockReturnedArray);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new PostData($mockApp);
+        $returned = $object->fetchPostCollectionData();
+
+        $this->assertSame($mockReturnedArray, $returned);
+    }
+
+    /**
+     * Test fetchPostContentDataById() throws InvalidArgumentException if
+     * provided invalid parameter
+     */
+    public function testFetchPostContentDataByIdThrowsInvalidArgumentException()
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
-            0
+            PostData::MESSAGE_NOT_INTEGER,
+            3
         );
 
-        $someValue = 'string';
-        $object = new PostData();
-        $object->createPostData($someValue);
+        $mockId = 'invalidid';
+        $mockApp = m::mock(\Silex\Application::class);
 
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+        $object = new PostData($mockApp);
+        $object->fetchPostContentDataById($mockId);
     }
 
     /**
-     * Test savePostData() throws UnexpectedValueException if fail to save
-     * to database
+     * Test fetchPostContentDataById() throws UnexpectedValueException if fail
+     * to read from database
      */
-    public function testSavePostDataThrowsUnexpectedValueException()
+    public function testFetchPostContentDataByIdThrowsUnexpectedValueException()
     {
         $this->setExpectedException(
             'UnexpectedValueException',
-            'A message of some kind',
-            0
+            PostData::MESSAGE_NO_RESULT_FOUND,
+            4
         );
 
-        $someValue = ['value1', 'value2'];
-        $object = new PostData();
-        $object->createPostData($someValue);
+        $mockId = 1;
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(PostData::SQL_SELECT_POST_CONTENT_BY_ID, [$mockId])
+            ->andReturn(false);
 
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new PostData($mockApp);
+        $object->fetchPostContentDataById($mockId);
     }
 
     /**
-     * Test createPostData() returns id if provided with valid data
+     * Test fetchPostContentDataById() returns array if provided with id
      */
-    public function testCreatePostDataReturnsId()
+    public function testFetchPostContentDataByIdReturnsData()
     {
-        $someValue = 1;
-        $object = new PostData();
-        $object->createPostData($someValue);
+        $mockReturnedArray = ['key' => 'value'];
+        $mockId = 1;
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(PostData::SQL_SELECT_POST_CONTENT_BY_ID, [$mockId])
+            ->andReturn($mockReturnedArray);
 
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
-    }
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
 
-    /**
-     * Test updatePostDataById() throws InvalidArgumentException if provided
-     * invalid parameter
-     */
-    public function testUpdatePostDataByIdThrowsInvalidArgumentException()
-    {
-        $this->setExpectedException(
-            'InvalidArgumentException',
-            'A message of some kind',
-            0
-        );
+        $object = new PostData($mockApp);
+        $returned = $object->fetchPostContentDataById($mockId);
 
-        $someValue = 'string';
-        $object = new PostData();
-        $object->updatePostDataById($someValue);
-
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
-    }
-
-    /**
-     * Test updatePostDataById() throws UnexpectedValueException if fail to save
-     * to database
-     */
-    public function testUpdatePostDataByIdThrowsUnexpectedValueException()
-    {
-        $this->setExpectedException(
-            'UnexpectedValueException',
-            'A message of some kind',
-            0
-        );
-
-        $someValue = ['value1', 'value2'];
-        $object = new PostData();
-        $object->updatePostDataById($someValue);
-
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
-    }
-
-    /**
-     * Test updatePostDataById() returns array if provided with valid data
-     */
-    public function testUpdatePostDataByIdSavesData()
-    {
-        $someValue = 1;
-        $object = new PostData();
-        $object->updatePostDataById($someValue);
-
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
-    }
-
-    /**
-     * Test deletePostDataById() throws InvalidArgumentException if provided
-     * invalid parameter
-     */
-    public function testDeletePostDataByIdThrowsInvalidArgumentException()
-    {
-        $this->setExpectedException(
-            'InvalidArgumentException',
-            'A message of some kind',
-            0
-        );
-
-        $someValue = [];
-        $object = new PostData();
-        $object->deletePostDataById($someValue);
-
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
-    }
-
-    /**
-     * Test deletePostDataById() throws UnexpectedValueException if fail to save
-     * to database
-     */
-    public function testDeletePostDataByIdThrowsUnexpectedValueException()
-    {
-        $this->setExpectedException(
-            'UnexpectedValueException',
-            'A message of some kind',
-            0
-        );
-
-        $someValue = 1;
-        $object = new PostData();
-        $object->deletePostDataById($someValue);
-
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
-    }
-
-    /**
-     * Test deletePostDataById() returns array if provided with valid data
-     */
-    public function testDeletePostDataByIdSavesData()
-    {
-        $someValue = 1;
-        $object = new PostData();
-        $object->deletePostDataById($someValue);
-
-        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+        $this->assertSame($mockReturnedArray, $returned);
     }
 
 
@@ -222,10 +206,178 @@ class PostDataTest extends PHPUnit_Framework_TestCase
 
 
 
+
+
+
+
+
+
+
+
+
+
+//
+//    /**
+//     * Test createPostData() throws InvalidArgumentException if provided
+//     * invalid parameter
+//     */
+//    public function testCreatePostDataThrowsInvalidArgumentException()
+//    {
+//        $this->setExpectedException(
+//            'InvalidArgumentException',
+//            'A message of some kind',
+//            0
+//        );
+//
+//        $someValue = 'string';
+//        $object = new PostData();
+//        $object->createPostData($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test savePostData() throws UnexpectedValueException if fail to save
+//     * to database
+//     */
+//    public function testSavePostDataThrowsUnexpectedValueException()
+//    {
+//        $this->setExpectedException(
+//            'UnexpectedValueException',
+//            'A message of some kind',
+//            0
+//        );
+//
+//        $someValue = ['value1', 'value2'];
+//        $object = new PostData();
+//        $object->createPostData($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test createPostData() returns id if provided with valid data
+//     */
+//    public function testCreatePostDataReturnsId()
+//    {
+//        $someValue = 1;
+//        $object = new PostData();
+//        $object->createPostData($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test updatePostDataById() throws InvalidArgumentException if provided
+//     * invalid parameter
+//     */
+//    public function testUpdatePostDataByIdThrowsInvalidArgumentException()
+//    {
+//        $this->setExpectedException(
+//            'InvalidArgumentException',
+//            'A message of some kind',
+//            0
+//        );
+//
+//        $someValue = 'string';
+//        $object = new PostData();
+//        $object->updatePostDataById($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test updatePostDataById() throws UnexpectedValueException if fail to save
+//     * to database
+//     */
+//    public function testUpdatePostDataByIdThrowsUnexpectedValueException()
+//    {
+//        $this->setExpectedException(
+//            'UnexpectedValueException',
+//            'A message of some kind',
+//            0
+//        );
+//
+//        $someValue = ['value1', 'value2'];
+//        $object = new PostData();
+//        $object->updatePostDataById($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test updatePostDataById() returns array if provided with valid data
+//     */
+//    public function testUpdatePostDataByIdSavesData()
+//    {
+//        $someValue = 1;
+//        $object = new PostData();
+//        $object->updatePostDataById($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test deletePostDataById() throws InvalidArgumentException if provided
+//     * invalid parameter
+//     */
+//    public function testDeletePostDataByIdThrowsInvalidArgumentException()
+//    {
+//        $this->setExpectedException(
+//            'InvalidArgumentException',
+//            'A message of some kind',
+//            0
+//        );
+//
+//        $someValue = [];
+//        $object = new PostData();
+//        $object->deletePostDataById($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test deletePostDataById() throws UnexpectedValueException if fail to save
+//     * to database
+//     */
+//    public function testDeletePostDataByIdThrowsUnexpectedValueException()
+//    {
+//        $this->setExpectedException(
+//            'UnexpectedValueException',
+//            'A message of some kind',
+//            0
+//        );
+//
+//        $someValue = 1;
+//        $object = new PostData();
+//        $object->deletePostDataById($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+//
+//    /**
+//     * Test deletePostDataById() returns array if provided with valid data
+//     */
+//    public function testDeletePostDataByIdSavesData()
+//    {
+//        $someValue = 1;
+//        $object = new PostData();
+//        $object->deletePostDataById($someValue);
+//
+//        $this->markTestIncomplete('This test may need: dataProvider, value expectations, message and code');
+//    }
+
+
+
+
+
+
+
+
     /**
-     * Test getPostById() returns array if provided with id
+     * Test fetchPostById() returns array if provided with id
      */
-//    public function testGetPostById()
+//    public function testFetchPostById()
 //    {
 //        $mockId = 1;
 //
@@ -253,17 +405,17 @@ class PostDataTest extends PHPUnit_Framework_TestCase
 //        ];
 //
 //        $mockPostDataObject = m::mock(PostData::class);
-//        $mockPostDataObject->shouldReceive('getPostRecordById')
+//        $mockPostDataObject->shouldReceive('fetchPostRecordById')
 //            ->with($mockId)
 //            ->willReturn($mockPostData);
 //
 //        $mockPostContentDataObject = m::mock(PostData::class);
-//        $mockPostContentDataObject->shouldReceive('getPostContentRecordById')
+//        $mockPostContentDataObject->shouldReceive('fetchPostContentRecordById')
 //            ->with($mockId)
 //            ->willReturn($mockPostContentData);
 ////there needs to be a hydrator here somewhere....
 //        $object = new Post();
-//        $array = $object->getPostById($mockId);
+//        $array = $object->fetchPostById($mockId);
 //
 //        $this->assertSame($mockReturnData, $array);
 //    }

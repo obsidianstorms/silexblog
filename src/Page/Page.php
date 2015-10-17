@@ -5,6 +5,7 @@ namespace BasicBlog\Page;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use BasicBlog\Post\PostFactory;
 
 /**
  * Class Page
@@ -13,23 +14,35 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class Page
 {
+    /**
+     * @var string Exception catching message
+     */
+    const MESSAGE_CAUGHT_EXCEPTION = 'Caught exception message [%s] with code [%s].';
+
+
     const DEFAULT_SUCCESSFUL_MESSAGE = 'Successful response: ';
     const DEFAULT_SUCCESSFUL_LOGGING = 'Status route example: ';
 
     /**
      * Indicates index application status
      */
-    public function index(\Silex\Application $app)
+    public function index(Application $app)
     {
+        return $app['twig']->render('home.twig', array('name' => ['value1', 'value2']));
+
         $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'index';
         $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'index');
         return new Response($text, 200);
+
+        $data = new PostCollectionFactory();
+        $data->fetch($app);
+
     }
 
     /**
      * Indicates login application status
      */
-    public function login(\Silex\Application $app)
+    public function login(Application $app)
     {
         $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'login';
         $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'login');
@@ -39,7 +52,7 @@ class Page
     /**
      * Indicates newPost application status
      */
-    public function newPost(\Silex\Application $app)
+    public function newPost(Application $app)
     {
         $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'newPost';
         $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'newPost');
@@ -48,12 +61,46 @@ class Page
 
     /**
      * Indicates viewPost application status
+     *
+     * @param $app Application
+     * @param $post_id integer
+     *
+     * @return Response
      */
-    public function viewPost(\Silex\Application $app)
+    public function viewPost(Application $app, $post_id)
     {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'viewPost';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'viewPost');
-        return new Response($text, 200);
+        $id = filter_var($post_id, FILTER_VALIDATE_INT);
+        if ($id === false) {
+            $message = 'Queried id must be a number.';
+            $app['monolog']->addError('Integer filtering returned false. ' . $message);
+            return new Response($message, 400);
+        }
+
+        $data = new PostFactory();
+        try {
+            $data->fetch($app, $id);
+            $message = "Found data";
+            $app['monolog']->addInfo($message);
+            return new Response($message, 200);
+        } catch (\InvalidArgumentException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            return new Response("Invalid query.", 400);
+        } catch (\UnexpectedValueException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            return new Response("Failed to retrieve data.", 400);
+        }
     }
 
     /**

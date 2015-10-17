@@ -2,6 +2,8 @@
 
 namespace BasicBlog\Post;
 
+use BasicBlog\Author\Author;
+
 use PHPUnit_Framework_TestCase;
 use Mockery as m;
 
@@ -58,13 +60,11 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
+            Post::MESSAGE_INVALID_INTEGER,
             0
         );
 
         $this->object->setPostId('invalid value');
-
-        $this->markTestIncomplete('This test needs: dataProvider, value expectations, message and code');
     }
 
     /**
@@ -98,13 +98,35 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
-            0
+            Post::MESSAGE_INVALID_INTEGER,
+            1
         );
 
         $this->object->setAuthorId('invalid value');
+    }
 
-        $this->markTestIncomplete('This test needs: dataProvider, value expectations, message and code');
+    /**
+     * Test getter and setters for author object
+     */
+    public function testAuthorGetterAndSetter()
+    {
+        $this->assertNull(
+            $this->object->getAuthor(),
+            'Author property was incorrectly populated at instantiation.'
+        );
+
+        $expectedValue = new Author();
+        $this->assertSame(
+            $this->object,
+            $this->object->setAuthor($expectedValue),
+            'Author setter did not return static object.'
+        );
+
+        $this->assertSame(
+            $expectedValue,
+            $this->object->getAuthor(),
+            'Author property did not return expected value.'
+        );
     }
 
     /**
@@ -138,13 +160,11 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
-            0
+            Post::MESSAGE_INVALID_STRING,
+            2
         );
 
-        $this->object->setTitle('invalid value');
-
-        $this->markTestIncomplete('This test needs: dataProvider, value expectations, message and code');
+        $this->object->setTitle([]);
     }
 
     /**
@@ -178,13 +198,11 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
-            0
+            Post::MESSAGE_INVALID_STRING,
+            3
         );
 
-        $this->object->setBody('invalid value');
-
-        $this->markTestIncomplete('This test needs: dataProvider, value expectations, message and code');
+        $this->object->setBody([]);
     }
 
     /**
@@ -218,13 +236,11 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
-            0
+            Post::MESSAGE_INVALID_STRING,
+            4
         );
 
-        $this->object->setCreated('invalid value');
-
-        $this->markTestIncomplete('This test needs: dataProvider, value expectations, message and code');
+        $this->object->setCreated([]);
     }
 
     /**
@@ -258,12 +274,10 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'A message of some kind',
-            0
+            Post::MESSAGE_INVALID_STRING,
+            5
         );
 
-        $this->object->setUpdated('invalid value');
-
-        $this->markTestIncomplete('This test needs: dataProvider, value expectations, message and code');
+        $this->object->setUpdated([]);
     }
 }

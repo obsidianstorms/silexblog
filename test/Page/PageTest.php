@@ -79,10 +79,6 @@ class PageTest extends WebTestCase
         $client->request('GET', '/' . $id);
 
         $this->assertTrue($client->getResponse()->isOk());
-        $this->assertEquals(
-            'Successful response: viewPost',
-            $client->getResponse()->getContent()
-        );
     }
 
     /**

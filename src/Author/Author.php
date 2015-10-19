@@ -34,6 +34,11 @@ class Author
     protected $email;
 
     /**
+     * @var string
+     */
+    protected $passwordHash;
+
+    /**
      * @var object Password
      */
     protected $password;
@@ -101,6 +106,25 @@ class Author
             );
         }
         $this->email = $email;
+        return $this;
+    }
+
+    /**
+     * @return Password
+     */
+    public function getPasswordHash()
+    {
+        return $this->passwordHash;
+    }
+
+    /**
+     * @param $hash string
+     *
+     * @return static
+     */
+    public function setPasswordHash($hash)
+    {
+        $this->passwordHash = $hash;
         return $this;
     }
 

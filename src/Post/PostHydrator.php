@@ -128,6 +128,9 @@ class PostHydrator
         $post->setCreated($data['created']);
         $post->setUpdated($data['updated']);
 
+        $authorFactory = new AuthorFactory();
+        $author = $authorFactory->fetch();
+
         $authorDataObject = new AuthorData($this->app);
         $author = new AuthorHydrator(
             new Author(),

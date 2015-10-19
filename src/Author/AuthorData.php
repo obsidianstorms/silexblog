@@ -19,7 +19,24 @@ class AuthorData
     /**
      * @var string
      */
+    const SQL_SELECT_AUTHOR_BASICS_BY_ID = 'SELECT author_id, email, first_name, last_name
+FROM authors WHERE author_id = ?';
+
+    /**
+     * @var string
+     */
+//    const SQL_INSERT_AUTHOR = 'INSERT author_id, email, first_name, last_name
+//FROM authors WHERE author_id = ?';
+
+    /**
+     * @var string
+     */
     const SQL_SELECT_AUTHOR_BY_EMAIL = 'SELECT * FROM authors WHERE email = ?';
+
+    /**
+     * @var string
+     */
+    const SQL_SELECT_AUTHORS = 'SELECT * FROM authors';
 
     /**
      * @var string
@@ -44,6 +61,32 @@ class AuthorData
     public function __construct(\Silex\Application $app)
     {
         $this->app = $app;
+    }
+
+    /**
+     * Fetch a single author data record by a provided id
+     *
+     * @param $id
+     *
+     * @throw \InvalidArgumentException
+     * @throw \UnexpectedValueException
+     *
+     * @return array
+     */
+    public function fetchAuthorBasicDataById($id)
+    {
+        if (!is_integer($id)) {
+            throw new \InvalidArgumentException(static::MESSAGE_NOT_INTEGER, 0);
+        }
+
+        $sql = static::SQL_SELECT_AUTHOR_BASICS_BY_ID;
+        $data = $this->app['db']->fetchAssoc($sql, array((int)$id));
+
+        if ($data === false) {
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 1);
+        }
+
+        return $data;
     }
 
     /**
@@ -100,6 +143,34 @@ class AuthorData
         }
 
         return $data;
+    }
+
+    public function doAuthorsExist()
+    {
+        $sql = static::SQL_SELECT_AUTHORS;
+        $data = $this->app['db']->fetchAssoc($sql);
+
+//        if ($data === false) {
+//            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 4);
+//        }
+
+        if (count($data) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public function createNewAuthor($data)
+    {
+        $result = $this->app['db']->insert('authors', $data);
+
+        if ($result === false) {
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 4);
+        }
+
+        $id = $this->app['db']->lastInsertId();
+
+        return $id;
     }
 
 }

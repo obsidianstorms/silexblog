@@ -27,10 +27,14 @@ $app->register(new Silex\Provider\TwigServiceProvider(), array(
 $app->register(new Silex\Provider\MonologServiceProvider(), array(
     'monolog.logfile' => __DIR__ . '/../logs/dev.log',
 ));
+$app->register(new Silex\Provider\SessionServiceProvider());
 
 
 /** Routes */
 $app->get('/', 'BasicBlog\Page\Page::index');
+$app->get('/register', 'BasicBlog\Page\Page::register');
+$app->post('/register', 'BasicBlog\Page\Page::newAuthor');
+
 $app->post('/login', 'BasicBlog\Page\Page::login');
 $app->post('/post', 'BasicBlog\Page\Page::newPost');
 $app->get('/{post_id}', 'BasicBlog\Page\Page::viewPost');

@@ -150,4 +150,46 @@ class AuthorDataTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame($mockReturnedArray, $returned);
     }
+
+    /**
+     * Test doAuthorsExist() returns true if records exist
+     */
+    public function testDoAuthorsExistReturnsTrue()
+    {
+        $mockReturnedArray = ['key' => 'value'];
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHORS)
+            ->andReturn($mockReturnedArray);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->doAuthorsExist();
+
+        $this->assertTrue($returned);
+    }
+
+    /**
+     * Test doAuthorsExist() returns true if records do not exist
+     */
+    public function testDoAuthorsExistReturnsFalse()
+    {
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHORS)
+            ->andReturn(false);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->doAuthorsExist();
+
+        $this->assertFalse($returned);
+    }
+
 }

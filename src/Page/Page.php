@@ -6,6 +6,7 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use BasicBlog\Post\PostFactory;
+use BasicBlog\Author\AuthorFactory;
 
 /**
  * Class Page
@@ -28,15 +29,83 @@ class Page
      */
     public function index(Application $app)
     {
-        return $app['twig']->render('home.twig', array('name' => ['value1', 'value2']));
+        if (null === $author = $app['session']->get('author')) {
+            $content = $app['twig']->render('sections/loginform.twig');
+        } else {
+            $content = $app['twig']->render('sections/postlist.twig');
+        }
+        return new Response($content, 200);
 
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'index';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'index');
-        return new Response($text, 200);
+//        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'index';
+//        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'index');
+//        return new Response($text, 200);
+//
+//        $data = new PostCollectionFactory();
+//        $author_id = 1; //todo: session id grab
+//        $data->fetchByAuthor($app, $author_id);
 
-        $data = new PostCollectionFactory();
-        $data->fetch($app);
+    }
 
+    /**
+     * Indicates registration page status
+     */
+    public function register(Application $app)
+    {
+        $content = $app['twig']->render('sections/registerauthor.twig');
+        return new Response($content, 200);
+    }
+
+    /**
+     * Indicates new author creation status
+     */
+    public function newAuthor(Application $app)
+    {
+        $factoryObject = new AuthorFactory();
+        try {
+            $result = $factoryObject->create($app, $_POST);
+        } catch (\InvalidArgumentException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            return new Response("Invalid submission.", 400);
+        } catch (\UnexpectedValueException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            return new Response("Failed to save author.", 400);
+        } catch (\RuntimeException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            return new Response("Failed Processing.", 400);
+        }
+
+        if (!$result) {
+            $content = "An author already exists.";
+            return new Response($content, 400);
+        } else {
+            $content = "Successful creation.";
+            // If successfully added author, retrieve full record by the returned id
+            $author = $factoryObject->fetchBasics($app, $result);
+            $app['session']->set('author', array(
+                'id' => $author->getAuthorId(),
+                'email' => $author->getEmail(),
+            ));
+            $app->redirect('/');
+        }
+//        return new Response($content, 200);
     }
 
     /**
@@ -76,9 +145,9 @@ class Page
             return new Response($message, 400);
         }
 
-        $data = new PostFactory();
+        $factoryObject = new PostFactory();
         try {
-            $data->fetch($app, $id);
+            $dataObject = $factoryObject->fetch($app, $id);
             $message = "Found data";
             $app['monolog']->addInfo($message);
             return new Response($message, 200);

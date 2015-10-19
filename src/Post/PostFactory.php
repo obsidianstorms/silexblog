@@ -2,9 +2,6 @@
 
 namespace BasicBlog\Post;
 
-use BasicBlog\Author\Author;
-use BasicBlog\Author\AuthorData;
-
 /**
  * Class PostFactory
  *
@@ -41,5 +38,4 @@ class PostFactory
 
         return $post;
     }
-
 }

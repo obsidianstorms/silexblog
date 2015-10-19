@@ -17,14 +17,19 @@ class PostCollectionFactory
     const MESSAGE_CAUGHT_EXCEPTION = 'Caught exception message [%s] with code [%s].';
 
     /**
-     * Fetch a hydrated post object
+     * Fetch a collection of hydrated post objects
      *
      * @param $app \Silex\Application
      *
      * @return PostCollection
      */
-    public function fetch(\Silex\Application $app)
+    public function fetchByAuthor(\Silex\Application $app, $author_id)
     {
+
+        $authorFactory = new AuthorFactory();
+        $authorObject = $authorFactory->fetchBasics($app, $author_id);
+
+
         $dataObject = new PostData($app);
         $data = $dataObject->fetchPostCollectionData();
 
@@ -32,11 +37,9 @@ class PostCollectionFactory
 
         if (!empty($data)) {
             foreach ($data as $record) {
-                $postHydrator = new PostHydrator();
-                $postHydrator->setApp($app);
+                $data = new PostFactory();
                 try {
-                    $postObject = $postHydrator->hydrateReference(new Post(), $record);
-                    $collectionObject->addToCollection($postObject);
+                    $dataObject = $factoryObject->fetch($app, $id);
                 } catch (\InvalidArgumentException $e) {
                     $app['monolog']->addError(
                         sprintf(

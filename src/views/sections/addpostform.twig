@@ -1,0 +1,16 @@
+{% block addpostform %}
+<p>Add Post</p>
+<form enctype="multipart/form-data" action="" method="POST">
+    <div>
+        <label for="title">Title: </label>
+        <input type="text" name="title" />
+    </div>
+    <div>
+        <label for="body">Body: </label>
+        <input type="password" name="body" />
+    </div>
+    <div>
+        <input type="submit" name="submit" value="Add Post" />
+    </div>
+</form>
+{% endblock addpostform %}

@@ -1,0 +1,12 @@
+{% block formcommentadd %}
+    <p>Add Comment</p>
+    <form enctype="multipart/form-data" action="/post/{{ post_id }}/comment/add" method="POST">
+        <div>
+            <label for="body">Body: </label>
+            <textarea name="body"> </textarea>
+        </div>
+        <div>
+            <input type="submit" name="submit" value="Add Comment" />
+        </div>
+    </form>
+{% endblock formcommentadd %}

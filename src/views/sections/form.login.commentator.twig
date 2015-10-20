@@ -1,0 +1,16 @@
+{% block commentloginform %}
+    <p>Login</p>
+    <form enctype="multipart/form-data" action="/commentator/login" method="POST">
+        <div>
+            <label for="username">Username: </label>
+            <input type="text" name="username" />
+        </div>
+        <div>
+            <label for="password">Password: </label>
+            <input type="password" name="password" />
+        </div>
+        <div>
+            <input type="submit" name="submit" value="Login" />
+        </div>
+    </form>
+{% endblock commentloginform %}

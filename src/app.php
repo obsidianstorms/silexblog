@@ -32,22 +32,33 @@ $app->register(new Silex\Provider\SessionServiceProvider());
 
 /** Routes */
 $app->get('/', 'BasicBlog\Page\Page::index');
-$app->get('/register', 'BasicBlog\Page\Page::register');
-$app->post('/register', 'BasicBlog\Page\Page::newAuthor');
+$app->get('/login', 'BasicBlog\Page\Page::pickLogin');
+$app->get('/logout', 'BasicBlog\Page\Page::logout');
+$app->get('/author/login', 'BasicBlog\Page\Page::viewLoginAuthor');
+$app->get('/commentator/login', 'BasicBlog\Page\Page::viewLoginCommentator');
+$app->get('/author/register', 'BasicBlog\Page\Page::viewRegisterAuthor');
+$app->get('/commentator/register', 'BasicBlog\Page\Page::viewRegisterCommentator');
+$app->get('/post/{post_id}/comment/login', 'BasicBlog\Page\Page::viewLoginComment');
+$app->get('/post/{post_id}/comment/register', 'BasicBlog\Page\Page::viewRegisterComment');
+$app->get('/post/{post_id}', 'BasicBlog\Page\Page::viewPost');
+$app->get('/post/{post_id}/edit', 'BasicBlog\Page\Page::viewEditPost');
 
-$app->post('/login', 'BasicBlog\Page\Page::login');
-$app->post('/post', 'BasicBlog\Page\Page::newPost');
-$app->get('/{post_id}', 'BasicBlog\Page\Page::viewPost');
-$app->get('/{post_id}/edit', 'BasicBlog\Page\Page::editPost');
-$app->put('/{post_id}', 'BasicBlog\Page\Page::changePost');
-$app->delete('/{post_id}', 'BasicBlog\Page\Page::removePost');
-$app->post('/{post_id}/comment', 'BasicBlog\Page\Page::newComment');
-$app->get('/{post_id}/{comment_id}', 'BasicBlog\Page\Page::viewComment');
-$app->delete('/{post_id}/{comment_id}', 'BasicBlog\Page\Page::removeComment');
+$app->post('/author/login', 'BasicBlog\Page\Page::validateLoginAuthor');
+$app->post('/commentator/login', 'BasicBlog\Page\Page::validateLoginCommentator');
+$app->post('/author/register', 'BasicBlog\Page\Page::newAuthor');
+$app->post('/commentator/register', 'BasicBlog\Page\Page::newCommentator');
+$app->post('/post/{post_id}/comment/login', 'BasicBlog\Page\Page::validateLoginCommentator');
+$app->post('/post/{post_id}/comment/register', 'BasicBlog\Page\Page::newCommentator');
+$app->post('/post/add', 'BasicBlog\Page\Page::newPost');
+$app->post('/post/{post_id}/comment/add', 'BasicBlog\Page\Page::newComment');
+
+$app->put('/post/{post_id}', 'BasicBlog\Page\Page::changePost');
+
+$app->delete('/post/{post_id}/delete', 'BasicBlog\Page\Page::removePost');
+$app->delete('/post/{post_id}/comment/{comment_id}/delete', 'BasicBlog\Page\Page::removeComment');
+
 
 //$app->match('/', 'BasicBlog\Page::index')
 //->method('GET|POST');
-
-
 
 return $app;

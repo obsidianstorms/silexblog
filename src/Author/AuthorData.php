@@ -2,6 +2,9 @@
 
 namespace BasicBlog\Author;
 
+use BasicBlog\Common\DataInterface;
+use BasicBlog\Common\DataTrait;
+
 /**
  * Class AuthorData
  *
@@ -9,34 +12,9 @@ namespace BasicBlog\Author;
  *
  * @package BasicBlog\Author
  */
-class AuthorData
+class AuthorData implements DataInterface
 {
-    /**
-     * @var string
-     */
-    const SQL_SELECT_AUTHOR_BY_ID = 'SELECT * FROM authors WHERE author_id = ?';
-
-    /**
-     * @var string
-     */
-    const SQL_SELECT_AUTHOR_BASICS_BY_ID = 'SELECT author_id, email, first_name, last_name
-FROM authors WHERE author_id = ?';
-
-    /**
-     * @var string
-     */
-//    const SQL_INSERT_AUTHOR = 'INSERT author_id, email, first_name, last_name
-//FROM authors WHERE author_id = ?';
-
-    /**
-     * @var string
-     */
-    const SQL_SELECT_AUTHOR_BY_EMAIL = 'SELECT * FROM authors WHERE email = ?';
-
-    /**
-     * @var string
-     */
-    const SQL_SELECT_AUTHORS = 'SELECT * FROM authors';
+    use DataTrait;
 
     /**
      * @var string
@@ -54,17 +32,68 @@ FROM authors WHERE author_id = ?';
     const MESSAGE_NO_RESULT_FOUND = 'Query found no matching results.';
 
     /**
-     * @var \Silex\Application
+     * @var string
      */
-    protected $app;
+    const SQL_SELECT_AUTHORS = 'SELECT * FROM authors';
+
+    /**
+     * @var string
+     */
+    const SQL_SELECT_AUTHOR_BY_ID = 'SELECT * FROM authors WHERE author_id = ?';
+
+    /**
+     * @var string
+     */
+    const SQL_SELECT_AUTHOR_BY_EMAIL = 'SELECT * FROM authors WHERE email = ?';
+
+    /**
+     * @var string (not password hash)
+     */
+    const SQL_SELECT_AUTHOR_BASICS_BY_ID = 'SELECT author_id, email, first_name, last_name
+FROM authors WHERE author_id = ?';
+
 
     public function __construct(\Silex\Application $app)
     {
-        $this->app = $app;
+        $this->setApp($app);
+    }
+
+    public function doAuthorsExist()
+    {
+        $sql = static::SQL_SELECT_AUTHORS;
+        $data = $this->app['db']->fetchAssoc($sql);
+
+        if ($data === false) {
+            $this->app['monolog']->addInfo("Query found no authors.");
+            return false;
+        }
+
+        if (count($data) > 0) {
+            return true;
+        }
+        return false;
     }
 
     /**
-     * Fetch a single author data record by a provided id
+     * @param $data
+     *
+     * @return mixed
+     */
+    public function create($data)
+    {
+        $result = $this->app['db']->insert('authors', $data);
+
+        if ($result === false) {
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 0);
+        }
+
+        $id = $this->app['db']->lastInsertId();
+
+        return $id;
+    }
+
+    /**
+     * Fetch a single author data record by a provided id, not fetching password
      *
      * @param $id
      *
@@ -145,32 +174,24 @@ FROM authors WHERE author_id = ?';
         return $data;
     }
 
-    public function doAuthorsExist()
+    /**
+     * Update password with new hash
+     *
+     * @param $author_id
+     * @param $hash
+     *
+     * @return mixed
+     */
+    public function updatePassword($author_id, $hash)
     {
-        $sql = static::SQL_SELECT_AUTHORS;
-        $data = $this->app['db']->fetchAssoc($sql);
-
-//        if ($data === false) {
-//            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 4);
-//        }
-
-        if (count($data) > 0) {
-            return true;
-        }
-        return false;
-    }
-
-    public function createNewAuthor($data)
-    {
-        $result = $this->app['db']->insert('authors', $data);
+        $result = $this->app['db']->update('authors', ['password_hash' => $hash], ['author_id' => $author_id]);
 
         if ($result === false) {
-            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 4);
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 0);
         }
 
-        $id = $this->app['db']->lastInsertId();
-
-        return $id;
+        return $author_id;
     }
+
 
 }

@@ -1,8 +1,3 @@
-{% extends 'layout.twig' %}
-
-{% block sub_title 'Login - ' %}
-{% block body %}
-{% block formloginauthor %}
     <h2>Login</h2>
     <form enctype="multipart/form-data" action="/login/author" method="POST">
         <div>
@@ -17,9 +12,3 @@
             <input type="submit" name="submit" value="Login" />
         </div>
     </form>
-    <p>
-        <a href="/register">Register</a>
-    </p>
-{% endblock formloginauthor %}
-
-{% endblock body %}

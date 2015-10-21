@@ -1,0 +1,22 @@
+{% extends 'layout.twig' %}
+
+{% set subtitle = post.title ~ ' - ' %}
+{% block sub_title subtitle %}
+
+{% block content %}
+    {% if message %}
+        {% include 'sections/error.twig' with message %}
+    {% endif %}
+
+    {% if post %}
+        {% include 'sections/view.post.twig' with post %}
+    {% endif %}
+
+    {% if comments %}
+        {% include 'sections/list.comment.twig' with comments %}
+    {% endif %}
+
+    {% if addComment %}
+        {% include 'sections/form.add.comment.twig' %}
+    {% endif %}
+{% endblock content %}

@@ -1,9 +1,11 @@
 <h2>Comments</h2>
 {% for v in comments %}
     <article>
-        <header>{{ v.body }}</header>
-        <div><span>Name:</span><span>{{ v.username }}</span></div>
-        <div><span>Created:</span><span>{{ v.created }}</span></div>
+        <section>{{ v.body }}</section>
+        <dl>
+            <dt>Commentator:</dt><dd>{{ v.username }}</dd>
+            <dt>Commented on:</dt><dd>{{ v.created }}</dd>
+        </dl>
         {% if admin %}
             <a href="/post/{{ v.post_id }}/comment/{{ v.comment_id }}/delete">Delete Comment</a>
         {% endif %}

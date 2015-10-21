@@ -1,9 +1,11 @@
-{% block menu %}
-    <ul>
+    <ul class="menu">
         <li><a href="/">Home</a></li>
+    {% if loggedIn %}
+        <li><a href="/logout">Logout</a></li>
+    {% else %}
         <li><a href="/login/author">Login as Author</a></li>
         <li><a href="/login/commentator">Login as Commentator</a></li>
         <li><a href="/register/author">Register as Author</a></li>
         <li><a href="/register/commentator">Register as Commentator</a></li>
+    {% endif %}
     </ul>
-{% endblock menu %}

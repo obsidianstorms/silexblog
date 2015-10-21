@@ -3,11 +3,19 @@
     <title>
         {%  block sub_title '' %} {%  block title 'BasicBlog' %}
     </title>
+    {% block stylesheets %}
+        <link type="text/css" rel="stylesheet" href="{{ app.request.basepath }}/theme/style.css" />
+    {% endblock stylesheets %}
 </head>
 <body>
-<h1>BasicBlog</h1>
 {% block body %}
-    Welcome to BasicBlog.
-{% endblock %}
+    {% block menu %}
+        {% include 'sections/menu.twig' %}
+    {% endblock menu %}
+    <h1>BasicBlog</h1>
+    {% block content %}
+        Welcome to BasicBlog.
+    {% endblock content %}
+{% endblock body %}
 </body>
 </html>

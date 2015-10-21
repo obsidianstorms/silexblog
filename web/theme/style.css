@@ -1,0 +1,70 @@
+body {
+    background: #EEEEEE;
+    font-family: Tahoma, Geneva, sans-serif;
+    font-size: 12px;
+}
+
+form {
+    margin: 3px;
+    border: 1px solid #CCCCCC;
+    padding: 3px;
+    white-space: nowrap;
+}
+
+form div {
+    width: 350px;
+    display: block;
+    clear: both;
+}
+form label {
+    float: left;
+}
+form input[type=text],
+form input[type=password],
+form textarea {
+    float: right;
+    width: 200px;
+}
+
+form input[type=submit] {
+}
+
+ul.menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.menu li {
+    display: inline;
+    border: 3px solid #AAAAAA;
+    padding: 3px;
+    background-color: #CCCCCC;
+}
+
+article {
+    background-color: #FFFFFF;
+    padding: 5px;
+    margin: 2px auto;
+}
+article header {
+    font-size: 1.2em;
+    font-weight: bolder;
+    text-decoration: underline;
+}
+
+article dl {
+    margin-bottom: 0px;
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+article dt {
+    float: left;
+    padding-right: 5px;
+}
+
+article section {
+    margin: 2px auto;
+    border: 1px solid #EEEEEE;
+}

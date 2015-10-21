@@ -96,6 +96,8 @@ class PostData implements DataInterface
      */
     public function update($id, $data)
     {
+        $timestamp = new \DateTime('now');
+        $data['updated'] = $timestamp->format('Y-m-d H:i:s');
         $result = $this->app['db']->update('posts', $data, ['post_id' => $id]);
 
         if ($result === false) {
@@ -118,8 +120,6 @@ class PostData implements DataInterface
         if ($result === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 3);
         }
-
-        $id = $this->app['db']->lastInsertId();
 
         return $id;
     }

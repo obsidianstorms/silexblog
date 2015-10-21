@@ -27,21 +27,31 @@ class Page
     const DEFAULT_SUCCESSFUL_LOGGING = 'Status route example: ';
 
     /**
-     * Build menu
-     *
      * @param Application $app
+     *
+     * @return bool
      */
-    protected function menu(Application $app)
+    protected function isLoggedIn(Application $app)
     {
-        $menu = '';
         if (is_null($app['session']->get('author'))
             && is_null($app['session']->get('commentator'))
         ) {
-            $menu .= $app['twig']->render('sections/menu.loggedout.twig');
-        } else {
-            $menu .= $app['twig']->render('sections/menu.loggedin.twig');
+            return false;
         }
-        return $menu;
+        return true;
+    }
+
+    /**
+     * @param Application $app
+     *
+     * @return bool
+     */
+    protected function isAdmin(Application $app)
+    {
+        if (is_null($app['session']->get('author'))) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -50,15 +60,12 @@ class Page
     public function index(Application $app)
     {
         // preset
-        $requestResponseCode = 200;
+        $requestResponseCode = '200_OK';
 
         // Fetch Post list
         $factoryObject = new PostFactory();
         try {
             $result = $factoryObject->fetchAll($app);
-            if (!$result) {
-                $requestResponseCode = 400;
-            }
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             $requestResponseCode = 400;
@@ -68,25 +75,29 @@ class Page
         }
 
         // Render page sections
-        $content = $this->menu($app);
+        $pageArgs = [
+            'loggedIn' => $this->isLoggedIn($app),
+            'admin' => $this->isAdmin($app),
+            'message' => false,
+            'addPost' => false,
+            'posts' => false,
+        ];
 
         if (isset($message)) {
-            $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
+            $pageArgs['message'] = $message;
         }
 
         //todo authorship display
         if (!is_null($app['session']->get('author'))) {
-            $content .= $app['twig']->render('sections/form.add.post.twig');
+            $pageArgs['addPost'] = true;
         }
 
-        $adminLoggedIn = false;
-        if (!is_null($app['session']->get('author'))) {
-            $adminLoggedIn = true;
-        }
         if (isset($result) && is_array($result)) {
-            $content .= $app['twig']->render('sections/list.post.twig', ['posts' => $result, 'admin' => $adminLoggedIn]);
+            $pageArgs['posts'] = $result;
         }
+
         // Return page
+        $content = $app['twig']->render('index.twig', $pageArgs);
         return new Response($content, $requestResponseCode);
 
         //todo: collection of objects with individual authorship rather than just array loop
@@ -100,19 +111,27 @@ class Page
             return $app->redirect('/');
         }
 
-        $requestResponseCode = 200;
-        $content = $this->menu($app);
+        // Render page sections
+        $pageArgs = [
+            'loggedIn' => $this->isLoggedIn($app),
+            'form' => false,
+        ];
+
         switch ($user) {
             case 'author':
-                $content .= $app['twig']->render('sections/form.login.author.twig');
+                $pageArgs['form'] = 'sections/form.login.author.twig';
                 break;
-            case 'commentator': //todo: login from post comment
-                $content .= $app['twig']->render('sections/form.login.commentator.twig');
+            case 'commentator':
+                //todo: login from post comment
+                $pageArgs['form'] = 'sections/form.login.commentator.twig';
                 break;
             default:
                 return $app->redirect('/');
         }
-        return new Response($content, $requestResponseCode);
+
+        // Return page
+        $content = $app['twig']->render('login.twig', $pageArgs);
+        return new Response($content);
     }
 
     public function viewRegister(Application $app, $user)
@@ -123,19 +142,27 @@ class Page
             return $app->redirect('/');
         }
 
-        $requestResponseCode = 200;
-        $content = $this->menu($app);
+        // Render page sections
+        $pageArgs = [
+            'loggedIn' => $this->isLoggedIn($app),
+            'form' => false,
+        ];
+
         switch ($user) {
             case 'author':
-                $content .= $app['twig']->render('sections/form.register.author.twig');
+                $pageArgs['form'] = 'sections/form.register.author.twig';
                 break;
-            case 'commentator': //todo: register from post comment
-                $content .= $app['twig']->render('sections/form.register.commentator.twig');
+            case 'commentator':
+                //todo: register from post comment
+                $pageArgs['form'] = 'sections/form.register.commentator.twig';
                 break;
             default:
                 return $app->redirect('/');
         }
-        return new Response($content, $requestResponseCode);
+
+        // Return page
+        $content = $app['twig']->render('register.twig', $pageArgs);
+        return new Response($content);
     }
 
     /**
@@ -168,8 +195,7 @@ class Page
      */
     public function viewReadPost(Application $app, $post_id)
     {
-        $content = $this->menu($app);
-        $requestResponseCode = 200;
+        $requestResponseCode = '200_OK';
 
         // Filter and validation
         $id = filter_var($post_id, FILTER_VALIDATE_INT);
@@ -222,26 +248,37 @@ class Page
         }
 
         // Content Display
+
+        // Render page sections
+        $pageArgs = [
+            'loggedIn' => $this->isLoggedIn($app),
+            'admin' => $this->isAdmin($app),
+            'message' => false,
+            'post' => false,
+            'comments' => false,
+            'addComment' => false,
+        ];
+
         if (isset($message)) {
-            $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
+            $pageArgs['message'] = $message;
         }
 
-        $adminLoggedIn = false;
-        if (!is_null($app['session']->get('author'))) {
-            $adminLoggedIn = true;
+        //todo authorship display
+        if (!is_null($app['session']->get('commentator'))) {
+            $pageArgs['addComment'] = true;
         }
+
         if (isset($post) && is_array($post)) {
-            $content .= $app['twig']->render('sections/view.post.twig', ['post' => $post, 'admin' => $adminLoggedIn]);
+            $pageArgs['post'] = $post;
+            $pageArgs['post_id'] = $post['post_id'];
         }
 
         if (isset($comments) && is_array($comments)) {
-            $content .= $app['twig']->render('sections/list.comment.twig', ['comments' => $comments, 'admin' => $adminLoggedIn]);
+            $pageArgs['comments'] = $comments;
         }
 
-        if (!is_null($app['session']->get('commentator'))) {
-            $content .= $app['twig']->render('sections/form.add.comment.twig', ['post_id' => $post['post_id']]);
-        }
-
+        // Return page
+        $content = $app['twig']->render('post.twig', $pageArgs);
         return new Response($content, $requestResponseCode);
     }
 
@@ -255,8 +292,7 @@ class Page
      */
     public function viewEditPost(Application $app, $post_id)
     {
-        $content = $this->menu($app);
-        $requestResponseCode = 200;
+        $requestResponseCode = '200_OK';
 
         // Filter and validation
         $id = filter_var($post_id, FILTER_VALIDATE_INT);
@@ -295,14 +331,23 @@ class Page
             $requestResponseCode = 400;
         }
 
+        // Render page sections
+        $pageArgs = [
+            'loggedIn' => $this->isLoggedIn($app),
+            'admin' => $this->isAdmin($app),
+            'message' => false,
+            'post' => false,
+        ];
+
         if (isset($message)) {
-            $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
+            $pageArgs['message'] = $message;
         }
 
         if (isset($post) && is_array($post)) {
-            $content .= $app['twig']->render('sections/form.update.post.twig', ['post' => $post]);
+            $pageArgs['post'] = $post;
         }
 
+        $content = $app['twig']->render('post.edit.twig', $pageArgs);
         return new Response($content, $requestResponseCode);
     }
 
@@ -429,7 +474,7 @@ class Page
         $factoryObject = new PostFactory();
 
         try {
-            $result = $factoryObject->update($app, $post_id);
+            $result = $factoryObject->update($app, $post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -441,7 +486,7 @@ class Page
         if (!$result) {
             return new Response('Failed to update post.', 400);
         }
-        return new Response("Updated Post.", 200);
+        return $app->redirect('/post/' . $post_id);
     }
 
     /**

@@ -1,10 +1,15 @@
-<h2>Posts</h2>
-{% for v in posts %}
-    <article>
-        <header><a href="/post/{{ v.post_id }}">{{ v.title }}</a></header>
-        {% if admin %}
-            <a href="/post/{{ v.post_id }}/edit">Edit</a>
-            <a href="/post/{{ v.post_id }}/delete">Delete</a>
-        {% endif %}
-    </article>
-{% endfor %}
+
+    <h2>Posts</h2>
+    {% for v in posts %}
+        <article>
+            <header><a href="/post/{{ v.post_id }}">{{ v.title }}</a></header>
+            <dl>
+                <dt>Created:</dt><dd>{{ v.created }}</dd>
+                <dt>Last Update:</dt><dd>{{ v.updated }}</dd>
+            </dl>
+            {% if admin %}
+                <a href="/post/{{ v.post_id }}/edit">Edit</a>
+                <a href="/post/{{ v.post_id }}/delete">Delete</a>
+            {% endif %}
+        </article>
+    {% endfor %}

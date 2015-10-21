@@ -1,0 +1,17 @@
+{% extends 'layout.twig' %}
+
+{% block sub_title 'Home - ' %}
+
+{% block content %}
+    {% if message %}
+        {% include 'sections/error.twig' with message %}
+    {% endif %}
+
+    {% if admin %}
+        {% include 'sections/form.add.post.twig' %}
+    {% endif %}
+
+    {% if posts %}
+        {% include 'sections/list.post.twig' with posts %}
+    {% endif %}
+{% endblock content %}

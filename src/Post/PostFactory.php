@@ -29,9 +29,6 @@ class PostFactory
         if (empty($data['title'])) {
             throw new \InvalidArgumentException('Title is empty.', 1);
         }
-        if (empty($data['body'])) {
-            throw new \InvalidArgumentException('Body is empty.', 2);
-        }
         if (null === $author = $app['session']->get('author')) {
             throw new \InvalidArgumentException('Author is not logged in.', 3);
         }
@@ -58,7 +55,7 @@ class PostFactory
             'title' => $validData['title'],
         ];
 
-        $post_id = $postDataObject->createNewPost($dataToInsert);
+        $post_id = $postDataObject->create($dataToInsert);
 
         // Save data to database
         $dataToInsertBody = [
@@ -66,9 +63,53 @@ class PostFactory
             'body' => $validData['body'],
         ];
 
-        $content_id = $postDataObject->createNewPostContent($dataToInsertBody);
+        $content_id = $postDataObject->createContent($dataToInsertBody);
 
-        return true;
+        if ($post_id && $content_id) {
+            return $post_id;
+        }
+        return false;
+    }
+
+    /**
+     * @param $app Application
+     * @param $post_id int
+     * @param $data array
+     *
+     * @return bool|mixed
+     */
+    public function update(Application $app, $post_id, array $data)
+    {
+        // Empty field check
+        if (empty($data['title'])) {
+            throw new \InvalidArgumentException('Title is empty.', 1);
+        }
+        if (null === $author = $app['session']->get('author')) {
+            throw new \InvalidArgumentException('Author is not logged in.', 3);
+        }
+
+        // Filtering Raw Data
+        $formFieldFilters = [
+            'title' => FILTER_SANITIZE_STRING,
+            'body' => FILTER_SANITIZE_STRING,
+        ];
+        $validData = $this->checkDataIntegrity($data, $formFieldFilters);
+
+        $formFieldFilters = [
+            'post_id' => FILTER_VALIDATE_INT,
+        ];
+        $validId = $this->checkDataIntegrity(['post_id' => $post_id], $formFieldFilters);
+
+
+        $postDataObject = new PostData($app);
+
+        $resultTitle = $postDataObject->update($validId['post_id'], ['title' => $validData['title']]);
+        $resultBody = $postDataObject->updateContent($validId['post_id'], ['body' => $validData['body']]);
+
+        if ($resultTitle && $resultBody) {
+            return $post_id;
+        }
+        return false;
     }
 
     /**
@@ -118,11 +159,17 @@ class PostFactory
     public function delete(Application $app, $id)
     {
         $postDataObject = new PostData($app);
-        $postData = $postDataObject->delete($id);
-        $postContentData = $postDataObject->deleteContent($id);
+
+        $formFieldFilters = [
+            'post_id' => FILTER_VALIDATE_INT,
+        ];
+        $validData = $this->checkDataIntegrity(['post_id' => $id], $formFieldFilters);
+
+        $postData = $postDataObject->delete($validData['post_id']);
+        $postContentData = $postDataObject->deleteContent($validData['post_id']);
 
         $commentDataObject = new CommentData($app);
-        $commentData = $commentDataObject->deleteAllForPost($id);
+        $commentData = $commentDataObject->deleteAllForPost($validData['post_id']);
 
         if ($postData && $postContentData && $commentData) {
             return true;

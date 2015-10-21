@@ -2,11 +2,11 @@
 
 {% block sub_title 'Register - ' %}
 {% block body %}
-    <h2>Register</h2>
-    <form enctype="multipart/form-data" action="/register/author" method="POST">
+    <h2>Register to Comment</h2>
+    <form enctype="multipart/form-data" action="/register/commentator" method="POST">
         <div>
-            <label for="email_address">Email Address: </label>
-            <input type="text" name="email_address" />
+            <label for="username">Username: </label>
+            <input type="text" name="username" />
         </div>
         <div>
             <label for="password">Password: </label>
@@ -15,14 +15,6 @@
         <div>
             <label for="password_confirm">Password Confirmation: </label>
             <input type="password" name="password_confirm" />
-        </div>
-        <div>
-            <label for="first_name">First Name: </label>
-            <input type="text" name="first_name" />
-        </div>
-        <div>
-            <label for="last_name">Last Name: </label>
-            <input type="text" name="last_name" />
         </div>
         <div>
             <input type="submit" name="submit" value="Register" />

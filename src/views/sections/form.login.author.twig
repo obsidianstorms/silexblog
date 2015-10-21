@@ -1,6 +1,10 @@
-{% block formauthorlogin %}
-    <p>Login</p>
-    <form enctype="multipart/form-data" action="" method="POST">
+{% extends 'layout.twig' %}
+
+{% block sub_title 'Login - ' %}
+{% block body %}
+{% block formloginauthor %}
+    <h2>Login</h2>
+    <form enctype="multipart/form-data" action="/login/author" method="POST">
         <div>
             <label for="email_address">Email Address: </label>
             <input type="text" name="email_address" />
@@ -16,4 +20,6 @@
     <p>
         <a href="/register">Register</a>
     </p>
-{% endblock loginform %}
+{% endblock formloginauthor %}
+
+{% endblock body %}

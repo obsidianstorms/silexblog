@@ -96,4 +96,19 @@ WHERE post_id = ? ORDER BY created ASC';
         return $id;
     }
 
+    /**
+     * @param $id int
+     *
+     * @return int
+     */
+    public function deleteAllForPost($id)
+    {
+        $result = $this->app['db']->delete('comments', ['post_id' => $id]);
+
+        if ($result === false) {
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 10);
+        }
+        return $id;
+    }
+
 }

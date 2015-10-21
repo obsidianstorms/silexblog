@@ -2,6 +2,7 @@
 
 namespace BasicBlog\Post;
 
+use BasicBlog\Comment\CommentData;
 use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
@@ -104,5 +105,28 @@ class PostFactory
         $data = array_merge($postData, $postContentData);
 
         return $data;
+    }
+
+    /**
+     * Fetch a post record
+     *
+     * @param $app Application
+     * @param $id integer
+     *
+     * @return array
+     */
+    public function delete(Application $app, $id)
+    {
+        $postDataObject = new PostData($app);
+        $postData = $postDataObject->delete($id);
+        $postContentData = $postDataObject->deleteContent($id);
+
+        $commentDataObject = new CommentData($app);
+        $commentData = $commentDataObject->deleteAllForPost($id);
+
+        if ($postData && $postContentData && $commentData) {
+            return true;
+        }
+        return false;
     }
 }

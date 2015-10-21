@@ -4,5 +4,8 @@
         <header>{{ v.body }}</header>
         <div><span>Name:</span><span>{{ v.username }}</span></div>
         <div><span>Created:</span><span>{{ v.created }}</span></div>
+        {% if admin %}
+            <a href="/post/{{ v.post_id }}/comment/{{ v.comment_id }}/delete">Delete Comment</a>
+        {% endif %}
     </article>
 {% endfor %}

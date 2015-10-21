@@ -54,7 +54,11 @@ FROM commentators WHERE commentator_id = ?';
 
     public function doesUsernameExist($username)
     {
-        $data = $this->fetchCommentatorByUsername($username);
+        try {
+            $data = $this->fetchCommentatorByUsername($username);
+        } catch (\UnexpectedValueException $e) {
+            $data = false; //none found, can proceed adding
+        }
 
         if ($data === false) {
             $this->app['monolog']->addInfo("Query found no matching commentators.");
@@ -97,7 +101,7 @@ FROM commentators WHERE commentator_id = ?';
     public function fetchCommentatorBasicDataById($id)
     {
         $sql = static::SQL_SELECT_COMMENTATOR_BASICS_BY_ID;
-        $data = $this->app['db']->fetch($sql, array((int) $id));
+        $data = $this->app['db']->fetchAssoc($sql, array((int) $id));
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 1);
@@ -118,10 +122,10 @@ FROM commentators WHERE commentator_id = ?';
     public function fetchCommentatorFullDataById($id)
     {
         $sql = static::SQL_SELECT_COMMENTATOR_BY_ID;
-        $data = $this->app['db']->fetch($sql, array((int) $id));
+        $data = $this->app['db']->fetchAssoc($sql, array((int) $id));
 
         if ($data === false) {
-            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 1);
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 2);
         }
 
         return $data;
@@ -139,10 +143,10 @@ FROM commentators WHERE commentator_id = ?';
     public function fetchCommentatorByUsername($username)
     {
         $sql = static::SQL_SELECT_COMMENTATOR_BY_USERNAME;
-        $data = $this->app['db']->fetch($sql, array( $username));
+        $data = $this->app['db']->fetchAssoc($sql, array( $username));
 
         if ($data === false) {
-            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 2);
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 3);
         }
 
         return $data;
@@ -161,7 +165,7 @@ FROM commentators WHERE commentator_id = ?';
         $result = $this->app['db']->update('commentators', ['password_hash' => $hash], ['commentator_id' => $id]);
 
         if ($result === false) {
-            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 0);
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 4);
         }
 
         return $id;

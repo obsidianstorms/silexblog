@@ -2,5 +2,9 @@
 {% for v in posts %}
     <article>
         <header><a href="/post/{{ v.post_id }}">{{ v.title }}</a></header>
+        {% if admin %}
+            <a href="/post/{{ v.post_id }}/edit">Edit</a>
+            <a href="/post/{{ v.post_id }}/delete">Delete</a>
+        {% endif %}
     </article>
 {% endfor %}

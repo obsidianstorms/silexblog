@@ -2,6 +2,7 @@
 
 namespace BasicBlog\Comment;
 
+use BasicBlog\Commentator\CommentatorData;
 use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
@@ -18,18 +19,16 @@ class CommentFactory
 
     /**
      * @param $app Application
+     * @param $post_id int|string
      * @param $data array
      *
      * @return bool|mixed
      */
-    public function create(Application $app, array $data)
+    public function create(Application $app, $post_id, array $data)
     {
         // Empty field check
         if (empty($data['body'])) {
             throw new \InvalidArgumentException('Body is empty.', 2);
-        }
-        if (null === $commentator = $app['session']->get('commentator')) {
-            throw new \InvalidArgumentException('Commentator is not logged in.', 3);
         }
 
         // Filtering Raw Data
@@ -38,32 +37,30 @@ class CommentFactory
         ];
         $validData = $this->checkDataIntegrity($data, $formFieldFilters);
 
+        $idFieldFilters = [
+            'post_id'  => FILTER_VALIDATE_INT,
+        ];
+        $validPostId = $this->checkDataIntegrity(['post_id' => $post_id], $idFieldFilters);
+
         // Authorship data
         $formFieldFilters = [
             'commentator_id' => FILTER_VALIDATE_INT,
         ];
-        $author = $app['session']->get('commentator');
+        $commentator = $app['session']->get('commentator');
         $validCommentatorData = $this->checkDataIntegrity($commentator, $formFieldFilters);
-
-        $postDataObject = new PostData($app);
 
         // Save data to database
         $dataToInsert = [
-            'author_id' => $validCommentatorData['author_id'],
-            'title'     => $validData['title'],
+            'commentator_id' => $validCommentatorData['commentator_id'],
+            'post_id' => $validPostId['post_id'],
+            'body'     => $validData['body'],
         ];
 
-        $post_id = $postDataObject->createNewPost($dataToInsert);
+        $dataObject = new CommentData($app);
 
-        // Save data to database
-        $dataToInsertBody = [
-            'post_id' => $post_id,
-            'body'    => $validData['body'],
-        ];
+        $comment_id = $dataObject->create($dataToInsert);
 
-        $content_id = $postDataObject->createNewPostContent($dataToInsertBody);
-
-        return true;
+        return $comment_id;
     }
 
     /**
@@ -76,12 +73,38 @@ class CommentFactory
      */
     public function fetchAll(Application $app, $post_id)
     {
+        // Comment data
         $commentDataObject = new CommentData($app);
+        $commentRecords = $commentDataObject->fetchCommentsByPostId($post_id);
 
-        // Fetch data from database
-        $records = $commentDataObject->fetchCommentatorFullDataById($post_id);
+        $records = [];
+        // Commentator data
+        foreach ($commentRecords as $comment) {
+            $commentatorDataObject = new CommentatorData($app);
+            $commentator = $commentatorDataObject->fetchCommentatorBasicDataById($comment['commentator_id']);
+            $records[] = array_merge($comment, $commentator);
+        }
 
         return $records;
+    }
+
+    /**
+     * Fetch a post record
+     *
+     * @param $app Application
+     * @param $id integer
+     *
+     * @return array
+     */
+    public function delete(Application $app, $id)
+    {
+        $commentDataObject = new CommentData($app);
+        $commentData = $commentDataObject->delete($id);
+
+        if ($commentData) {
+            return true;
+        }
+        return false;
     }
 
 }

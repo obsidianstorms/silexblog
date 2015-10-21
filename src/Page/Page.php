@@ -2,14 +2,13 @@
 
 namespace BasicBlog\Page;
 
-use BasicBlog\Commentator\CommentatorFactory;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use BasicBlog\Post\PostFactory;
 use BasicBlog\Author\AuthorFactory;
 use BasicBlog\Comment\CommentFactory;
-use Zend\Feed\Reader\Collection\Author;
+use BasicBlog\Commentator\CommentatorFactory;
 
 /**
  * Class Page
@@ -35,8 +34,8 @@ class Page
     protected function menu(Application $app)
     {
         $menu = '';
-        if (null === $author = $app['session']->get('author')
-            || null === $commentator = $app['session']->get('commentator')
+        if (is_null($app['session']->get('author'))
+            && is_null($app['session']->get('commentator'))
         ) {
             $menu .= $app['twig']->render('sections/menu.loggedout.twig');
         } else {
@@ -50,17 +49,10 @@ class Page
      */
     public function index(Application $app)
     {
-        if (is_null($app['session']->get('author'))
-            || is_null($app['session']->get('commentator'))
-        ) {
-            return $app->redirect('/login');
-        }
-
+        // preset
         $requestResponseCode = 200;
-        $content = $this->menu($app);
 
-        //todo authorship display
-
+        // Fetch Post list
         $factoryObject = new PostFactory();
         try {
             $result = $factoryObject->fetchAll($app);
@@ -75,29 +67,75 @@ class Page
             $requestResponseCode = 400;
         }
 
+        // Render page sections
+        $content = $this->menu($app);
+
         if (isset($message)) {
             $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
         }
 
-        $content .= $app['twig']->render('sections/form.add.post.twig');
-
-        if (is_array($result)) {
-            $content .= $app['twig']->render('sections/list.post.twig', ['posts' => $result]);
+        //todo authorship display
+        if (!is_null($app['session']->get('author'))) {
+            $content .= $app['twig']->render('sections/form.add.post.twig');
         }
+
+        $adminLoggedIn = false;
+        if (!is_null($app['session']->get('author'))) {
+            $adminLoggedIn = true;
+        }
+        if (isset($result) && is_array($result)) {
+            $content .= $app['twig']->render('sections/list.post.twig', ['posts' => $result, 'admin' => $adminLoggedIn]);
+        }
+        // Return page
         return new Response($content, $requestResponseCode);
 
         //todo: collection of objects with individual authorship rather than just array loop
     }
 
-    /**
-     * Choose login type
-     *
-     * @param Application $app
-     */
-    public function pickLogin(Application $app)
+    public function viewLogin(Application $app, $user)
     {
-        $content = $app['twig']->render('sections/view.login.pick.twig');
-        return new Response($content, 200);
+        if (!is_null($app['session']->get('author'))
+            || !is_null($app['session']->get('commentator'))
+        ) {
+            return $app->redirect('/');
+        }
+
+        $requestResponseCode = 200;
+        $content = $this->menu($app);
+        switch ($user) {
+            case 'author':
+                $content .= $app['twig']->render('sections/form.login.author.twig');
+                break;
+            case 'commentator': //todo: login from post comment
+                $content .= $app['twig']->render('sections/form.login.commentator.twig');
+                break;
+            default:
+                return $app->redirect('/');
+        }
+        return new Response($content, $requestResponseCode);
+    }
+
+    public function viewRegister(Application $app, $user)
+    {
+        if (!is_null($app['session']->get('author'))
+            || !is_null($app['session']->get('commentator'))
+        ) {
+            return $app->redirect('/');
+        }
+
+        $requestResponseCode = 200;
+        $content = $this->menu($app);
+        switch ($user) {
+            case 'author':
+                $content .= $app['twig']->render('sections/form.register.author.twig');
+                break;
+            case 'commentator': //todo: register from post comment
+                $content .= $app['twig']->render('sections/form.register.commentator.twig');
+                break;
+            default:
+                return $app->redirect('/');
+        }
+        return new Response($content, $requestResponseCode);
     }
 
     /**
@@ -107,9 +145,9 @@ class Page
      */
     public function logout(Application $app)
     {
-        if (is_null($app['session']->get('author'))) {
+        if (!is_null($app['session']->get('author'))) {
             $user = new AuthorFactory();
-        } elseif (is_null($app['session']->get('commentator'))) {
+        } elseif (!is_null($app['session']->get('commentator'))) {
             $user = new CommentatorFactory();
         } else {
             $app['monolog']->addError('Session found but not author nor commentator.');
@@ -121,94 +159,6 @@ class Page
     }
 
     /**
-     * Indicates registration page status
-     */
-    public function register(Application $app)
-    {
-        $content = $app['twig']->render('sections/registerauthor.twig');
-        return new Response($content, 200);
-    }
-
-    /**
-     * Indicates new author creation status
-     */
-    public function newAuthor(Application $app)
-    {
-        $factoryObject = new AuthorFactory();
-
-        try {
-            $result = $factoryObject->create($app, $_POST);
-        } catch (\InvalidArgumentException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
-        } catch (\UnexpectedValueException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
-        }
-
-        if (!$result) {
-            return new Response('Found Authors.', 400);
-        }
-        return new Response("Added Author {$result}.", 200);
-    }
-
-    /**
-     * Indicates login application status
-     */
-    public function login(Application $app)
-    {
-        $content = $app['twig']->render('sections/loginform.twig');
-        return new Response($content, 200);
-    }
-
-    /**
-     * Indicates login application status
-     */
-    public function validateLogin(Application $app)
-    {
-        $factoryObject = new AuthorFactory();
-
-        try {
-            $result = $factoryObject->login($app, $_POST);
-        } catch (\InvalidArgumentException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
-        } catch (\RuntimeException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
-        }
-
-        if (!$result) {
-            return new Response('Invalid Login.', 400);
-        }
-        return new Response("Login successful.", 200);
-    }
-
-    /**
-     * Indicates newPost application status
-     */
-    public function newPost(Application $app)
-    {
-        $factoryObject = new PostFactory();
-
-        try {
-            $result = $factoryObject->create($app, $_POST);
-        } catch (\InvalidArgumentException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
-        } catch (\UnexpectedValueException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
-        }
-
-        if (!$result) {
-            return new Response('Failed to add post.', 400);
-        }
-        return new Response("Added Post.", 200);
-
-    }
-
-    /**
      * Indicates viewPost application status
      *
      * @param $app Application
@@ -216,11 +166,12 @@ class Page
      *
      * @return Response
      */
-    public function viewPost(Application $app, $post_id)
+    public function viewReadPost(Application $app, $post_id)
     {
-        $content = '';
+        $content = $this->menu($app);
         $requestResponseCode = 200;
 
+        // Filter and validation
         $id = filter_var($post_id, FILTER_VALIDATE_INT);
         if ($id === false) {
             $message = 'Queried id must be a number.';
@@ -228,9 +179,13 @@ class Page
             $requestResponseCode = 400;
         }
 
+        // Fetch post data
         $factoryObject = new PostFactory();
         try {
             $post = $factoryObject->fetch($app, $id);
+            if (!$post) {
+                $requestResponseCode = 400;
+            }
         } catch (\InvalidArgumentException $e) {
             $app['monolog']->addError(
                 sprintf(
@@ -253,22 +208,11 @@ class Page
             $requestResponseCode = 400;
         }
 
-        if (!$post) {
-            $requestResponseCode = 400;
-        }
-
-        if (isset($message)) {
-            $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
-        }
-
-        if (is_array($post)) {
-            $content .= $app['twig']->render('sections/postview.twig', ['post' => $post]);
-        }
-
-        // Comments
+        // Fetch comment data
         $factoryComment = new CommentFactory();
         try {
             $comments = $factoryComment->fetchAll($app, $post['post_id']);
+            //todo: need authorship for comments
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             $requestResponseCode = 400;
@@ -277,83 +221,272 @@ class Page
             $requestResponseCode = 400;
         }
 
-        $content .= $app['twig']->render('sections/layout.commentlist.twig');
-        if (is_array($comments)) {
-            //todo: figure out how to nest render an admin-only delete link in the commentlist.twig loop
-            if (null === $author = $app['session']->get('author')) {
-                $content .= $app['twig']->render('sections/commentlistadmin.twig', ['comments' => $comments]);
-            } else {
-                $content .= $app['twig']->render('sections/commentlist.twig', ['comments' => $comments]);
-            }
+        // Content Display
+        if (isset($message)) {
+            $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
         }
 
-        if (null === $commentator = $app['session']->get('commentator')) {
-            $content .= $app['twig']->render('sections/commentform.twig', ['post_id' => $post['post_id']]);
-        } else {
-            $content .= $app['twig']->render('sections/commentlogin.twig', ['post_id' => $post['post_id']]);
-            $content .= $app['twig']->render('sections/commentregister.twig', ['post_id' => $post['post_id']]);
+        $adminLoggedIn = false;
+        if (!is_null($app['session']->get('author'))) {
+            $adminLoggedIn = true;
+        }
+        if (isset($post) && is_array($post)) {
+            $content .= $app['twig']->render('sections/view.post.twig', ['post' => $post, 'admin' => $adminLoggedIn]);
+        }
+
+        if (isset($comments) && is_array($comments)) {
+            $content .= $app['twig']->render('sections/list.comment.twig', ['comments' => $comments, 'admin' => $adminLoggedIn]);
+        }
+
+        if (!is_null($app['session']->get('commentator'))) {
+            $content .= $app['twig']->render('sections/form.add.comment.twig', ['post_id' => $post['post_id']]);
         }
 
         return new Response($content, $requestResponseCode);
     }
 
     /**
+     * Indicates viewPost application status
+     *
+     * @param $app Application
+     * @param $post_id integer
+     *
+     * @return Response
+     */
+    public function viewEditPost(Application $app, $post_id)
+    {
+        $content = $this->menu($app);
+        $requestResponseCode = 200;
+
+        // Filter and validation
+        $id = filter_var($post_id, FILTER_VALIDATE_INT);
+        if ($id === false) {
+            $message = 'Queried id must be a number.';
+            $app['monolog']->addError('Integer filtering returned false. ' . $message);
+            $requestResponseCode = 400;
+        }
+
+        // Fetch post data
+        $factoryObject = new PostFactory();
+        try {
+            $post = $factoryObject->fetch($app, $id);
+            if (!$post) {
+                $requestResponseCode = 400;
+            }
+        } catch (\InvalidArgumentException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            $message = 'Invalid query.';
+            $requestResponseCode = 400;
+        } catch (\UnexpectedValueException $e) {
+            $app['monolog']->addError(
+                sprintf(
+                    static::MESSAGE_CAUGHT_EXCEPTION,
+                    $e->getMessage(),
+                    $e->getCode()
+                )
+            );
+            $message = 'Failed to retrieve data.';
+            $requestResponseCode = 400;
+        }
+
+        if (isset($message)) {
+            $content .= $app['twig']->render('sections/error.twig', ['message' => $message]);
+        }
+
+        if (isset($post) && is_array($post)) {
+            $content .= $app['twig']->render('sections/form.update.post.twig', ['post' => $post]);
+        }
+
+        return new Response($content, $requestResponseCode);
+    }
+
+    public function newUser(Application $app, $user)
+    {
+        switch ($user) {
+            case 'author':
+                $factoryObject = new AuthorFactory();
+                $resultFalseMessage = 'Found an existing author, unable to register another.';
+                $resultTrueMessage = 'Added author.';
+                break;
+            case 'commentator':
+                $factoryObject = new CommentatorFactory();
+                $resultFalseMessage = 'Failed registering commentary user. Reason: unknown.';
+                $resultTrueMessage = 'Successfully registered to comment.';
+                break;
+            default:
+                return $app->redirect('/');
+        }
+
+        try {
+            $result = $factoryObject->create($app, $_POST);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
+
+        if (!$result) {
+            return new Response($resultFalseMessage, 400);
+        }
+        return $app->redirect('/');
+    }
+
+    /**
+     * Indicates login application status
+     */
+    public function validateLogin(Application $app, $user)
+    {
+        $resultFalseMessage = 'Failed logging in. Reason: unknown.';
+        $resultTrueMessage = 'Successfully logged in.';
+        //todo: session messages carry over redirects
+
+        switch ($user) {
+            case 'author':
+                $factoryObject = new AuthorFactory();
+                break;
+            case 'commentator':
+                $factoryObject = new CommentatorFactory();
+                break;
+            default:
+                return $app->redirect('/');
+        }
+
+        try {
+            $result = $factoryObject->login($app, $_POST);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
+
+        if (!$result) {
+            return new Response($resultFalseMessage, 400);
+        }
+        return $app->redirect('/');
+    }
+
+    /**
+     * Indicates newPost application status
+     */
+    public function newPost(Application $app)
+    {
+        $factoryObject = new PostFactory();
+
+        try {
+            $result = $factoryObject->create($app, $_POST);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
+
+        if (!$result) {
+            return new Response('Failed to add post.', 400);
+        }
+        return $app->redirect('/');
+    }
+
+    /**
      * Indicates newComment application status
      */
-    public function newComment(\Silex\Application $app)
+    public function newComment(Application $app, $post_id)
     {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'newComment';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'newComment');
-        return new Response($text, 200);
+        $factoryObject = new CommentFactory();
+
+        try {
+            $result = $factoryObject->create($app, $post_id, $_POST);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
+
+        if (!$result) {
+            return new Response('Failed to add comment.', 400);
+        }
+        return $app->redirect('/post/' . $post_id);
     }
 
     /**
-     * Indicates editPost application status
+     * Indicates newPost application status
      */
-    public function editPost(\Silex\Application $app)
+    public function editPost(Application $app, $post_id)
     {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'editPost';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'editPost');
-        return new Response($text, 200);
+        $factoryObject = new PostFactory();
+
+        try {
+            $result = $factoryObject->update($app, $post_id);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
+
+        if (!$result) {
+            return new Response('Failed to update post.', 400);
+        }
+        return new Response("Updated Post.", 200);
     }
 
     /**
-     * Indicates changePost application status
+     * Indicates newPost application status
      */
-    public function changePost(\Silex\Application $app)
+    public function removePost(Application $app, $post_id)
     {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'changePost';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'changePost');
-        return new Response($text, 200);
+        $factoryObject = new PostFactory();
+
+        try {
+            $result = $factoryObject->delete($app, $post_id);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
+
+        if (!$result) {
+            return new Response('Failed to remove post.', 400);
+        }
+        return $app->redirect('/');
     }
 
     /**
-     * Indicates removePost application status
+     * Indicates newPost application status
      */
-    public function removePost(\Silex\Application $app)
+    public function removeComment(Application $app, $post_id, $comment_id)
     {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'removePost';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'removePost');
-        return new Response($text, 200);
-    }
+        $factoryObject = new CommentFactory();
 
-    /**
-     * Indicates viewComment application status
-     */
-    public function viewComment(\Silex\Application $app)
-    {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'viewComment';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'viewComment');
-        return new Response($text, 200);
-    }
+        try {
+            $result = $factoryObject->delete($app, $comment_id);
+        } catch (\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        } catch (\UnexpectedValueException $e) {
+            $message = $e->getMessage();
+            return new Response($message, 400);
+        }
 
-    /**
-     * Indicates removeComment application status
-     */
-    public function removeComment(\Silex\Application $app)
-    {
-        $text = static::DEFAULT_SUCCESSFUL_MESSAGE . 'removeComment';
-        $app['monolog']->addInfo(static::DEFAULT_SUCCESSFUL_LOGGING . 'removeComment');
-        return new Response($text, 200);
+        if (!$result) {
+            return new Response('Failed to remove comment.', 400);
+        }
+        return $app->redirect('/post/' . $post_id);
     }
 }

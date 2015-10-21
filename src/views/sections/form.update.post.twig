@@ -1,4 +1,9 @@
-<p>Update Post</p>
+{% extends 'layout.twig' %}
+
+{% block sub_title 'Login - ' %}
+{% block body %}
+{% block formupdatepost %}
+<h2>Edit Post</h2>
 <form enctype="multipart/form-data" action="" method="POST">
     <div>
         <label for="title">Title: </label>
@@ -6,9 +11,12 @@
     </div>
     <div>
         <label for="body">Body: </label>
-        <input type="password" name="body" value="{{ post.body }}"/>
+        <textarea name="body"> </textarea>
     </div>
     <div>
-        <input type="submit" name="submit" value="Add Post" />
+        <input type="submit" name="submit" value="Save Changes" />
     </div>
 </form>
+{% endblock formupdatepost %}
+
+{% endblock body %}

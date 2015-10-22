@@ -17,6 +17,14 @@ trait DataTrait
     /**
      * {@inheritDoc}
      */
+    public function __construct(\Silex\Application $app)
+    {
+        $this->setApp($app);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getApp()
     {
         return $this->app;

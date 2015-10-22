@@ -34,23 +34,29 @@ class PostData implements DataInterface
     /**
      * @var string
      */
-    const SQL_SELECT_SINGLE_POST_BY_ID = 'SELECT * FROM posts WHERE post_id = ?';
+    const SQL_SELECT_SINGLE_POST_BY_ID = '
+        SELECT *
+        FROM posts
+        WHERE post_id = ?
+    ';
 
     /**
      * @var string
      */
-    const SQL_SELECT_POSTS_SORTED_CREATED_ASC = 'SELECT * FROM posts ORDER BY created ASC';
+    const SQL_SELECT_POSTS_SORTED_CREATED_ASC = '
+        SELECT *
+        FROM posts
+        ORDER BY created ASC
+    ';
 
     /**
      * @var string
      */
-    const SQL_SELECT_POST_CONTENT_BY_ID = 'SELECT * FROM post_content WHERE post_id = ?';
-
-
-    public function __construct(\Silex\Application $app)
-    {
-        $this->setApp($app);
-    }
+    const SQL_SELECT_POST_CONTENT_BY_ID = '
+        SELECT *
+        FROM post_content
+        WHERE post_id = ?
+    ';
 
     /**
      * @param $data array

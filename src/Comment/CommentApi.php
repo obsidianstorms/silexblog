@@ -7,13 +7,13 @@ use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
 /**
- * Class CommentFactory
+ * Class CommentApi
  *
  * Handle Comment Objects
  *
  * @package BasicBlog\Comment
  */
-class CommentFactory
+class CommentApi
 {
     use ValidationTrait;
 
@@ -106,5 +106,4 @@ class CommentFactory
         }
         return false;
     }
-
 }

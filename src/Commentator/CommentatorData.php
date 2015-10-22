@@ -34,24 +34,37 @@ class CommentatorData implements DataInterface
     /**
      * @var string
      */
-    const SQL_SELECT_COMMENTATOR_BY_ID = 'SELECT * FROM commentators WHERE commentator_id = ?';
+    const SQL_SELECT_COMMENTATOR_BY_ID = '
+        SELECT *
+        FROM commentators
+        WHERE commentator_id = ?
+    ';
 
     /**
      * @var string (not password hash)
      */
-    const SQL_SELECT_COMMENTATOR_BASICS_BY_ID = 'SELECT commentator_id, username
-FROM commentators WHERE commentator_id = ?';
+    const SQL_SELECT_COMMENTATOR_BASICS_BY_ID = '
+        SELECT
+            commentator_id,
+            username
+        FROM commentators
+        WHERE commentator_id = ?
+    ';
 
     /**
      * @var string
      */
-    const SQL_SELECT_COMMENTATOR_BY_USERNAME = 'SELECT * FROM commentators WHERE username = ?';
+    const SQL_SELECT_COMMENTATOR_BY_USERNAME = '
+        SELECT *
+        FROM commentators
+        WHERE username = ?
+    ';
 
-    public function __construct(\Silex\Application $app)
-    {
-        $this->setApp($app);
-    }
-
+    /**
+     * @param $username string
+     *
+     * @return bool
+     */
     public function doesUsernameExist($username)
     {
         try {
@@ -72,7 +85,7 @@ FROM commentators WHERE commentator_id = ?';
     }
 
     /**
-     * @param $data
+     * @param $data array
      *
      * @return int
      */
@@ -155,8 +168,8 @@ FROM commentators WHERE commentator_id = ?';
     /**
      * Update password with new hash
      *
-     * @param $author_id
-     * @param $hash
+     * @param $author_id integer
+     * @param $hash string
      *
      * @return mixed
      */
@@ -170,5 +183,4 @@ FROM commentators WHERE commentator_id = ?';
 
         return $id;
     }
-
 }

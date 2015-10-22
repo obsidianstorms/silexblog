@@ -5,10 +5,10 @@ namespace BasicBlog\Page;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use BasicBlog\Post\PostFactory;
-use BasicBlog\Author\AuthorFactory;
-use BasicBlog\Comment\CommentFactory;
-use BasicBlog\Commentator\CommentatorFactory;
+use BasicBlog\Post\PostApi;
+use BasicBlog\Author\AuthorApi;
+use BasicBlog\Comment\CommentApi;
+use BasicBlog\Commentator\CommentatorApi;
 
 /**
  * Class Page
@@ -21,10 +21,6 @@ class Page
      * @var string Exception catching message
      */
     const MESSAGE_CAUGHT_EXCEPTION = 'Caught exception message [%s] with code [%s].';
-
-
-    const DEFAULT_SUCCESSFUL_MESSAGE = 'Successful response: ';
-    const DEFAULT_SUCCESSFUL_LOGGING = 'Status route example: ';
 
     /**
      * @param Application $app
@@ -55,7 +51,22 @@ class Page
     }
 
     /**
-     * Indicates index application status
+     * @param Application $app
+     *
+     * @return bool
+     */
+    protected function isUser(Application $app)
+    {
+        if (is_null($app['session']->get('commentator'))) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param Application $app
+     *
+     * @return Response
      */
     public function index(Application $app)
     {
@@ -63,9 +74,9 @@ class Page
         $requestResponseCode = '200_OK';
 
         // Fetch Post list
-        $factoryObject = new PostFactory();
+        $apiObject = new PostApi();
         try {
-            $result = $factoryObject->fetchAll($app);
+            $result = $apiObject->fetchAll($app);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             $requestResponseCode = 400;
@@ -88,7 +99,7 @@ class Page
         }
 
         //todo authorship display
-        if (!is_null($app['session']->get('author'))) {
+        if ($this->isAdmin($app)) {
             $pageArgs['addPost'] = true;
         }
 
@@ -103,17 +114,23 @@ class Page
         //todo: collection of objects with individual authorship rather than just array loop
     }
 
+    /**
+     * @param Application $app
+     * @param $user string
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
+     */
     public function viewLogin(Application $app, $user)
     {
-        if (!is_null($app['session']->get('author'))
-            || !is_null($app['session']->get('commentator'))
-        ) {
+        $isLoggedIn = $this->isLoggedIn($app);
+
+        if ($isLoggedIn) {
             return $app->redirect('/');
         }
 
         // Render page sections
         $pageArgs = [
-            'loggedIn' => $this->isLoggedIn($app),
+            'loggedIn' => $isLoggedIn,
             'form' => false,
         ];
 
@@ -134,17 +151,23 @@ class Page
         return new Response($content);
     }
 
+    /**
+     * @param Application $app
+     * @param $user string
+     *
+     * @return Response
+     */
     public function viewRegister(Application $app, $user)
     {
-        if (!is_null($app['session']->get('author'))
-            || !is_null($app['session']->get('commentator'))
-        ) {
+        $isLoggedIn = $this->isLoggedIn($app);
+
+        if ($isLoggedIn) {
             return $app->redirect('/');
         }
 
         // Render page sections
         $pageArgs = [
-            'loggedIn' => $this->isLoggedIn($app),
+            'loggedIn' => $isLoggedIn,
             'form' => false,
         ];
 
@@ -166,16 +189,16 @@ class Page
     }
 
     /**
-     * Logout
-     *
      * @param Application $app
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function logout(Application $app)
     {
-        if (!is_null($app['session']->get('author'))) {
-            $user = new AuthorFactory();
-        } elseif (!is_null($app['session']->get('commentator'))) {
-            $user = new CommentatorFactory();
+        if ($this->isAdmin($app)) {
+            $user = new AuthorApi();
+        } elseif ($this->isUser($app)) {
+            $user = new CommentatorApi();
         } else {
             $app['monolog']->addError('Session found but not author nor commentator.');
             return $app->redirect('/');
@@ -186,10 +209,8 @@ class Page
     }
 
     /**
-     * Indicates viewPost application status
-     *
-     * @param $app Application
-     * @param $post_id integer
+     * @param Application $app
+     * @param $post_id
      *
      * @return Response
      */
@@ -206,9 +227,9 @@ class Page
         }
 
         // Fetch post data
-        $factoryObject = new PostFactory();
+        $apiObject = new PostApi();
         try {
-            $post = $factoryObject->fetch($app, $id);
+            $post = $apiObject->fetch($app, $id);
             if (!$post) {
                 $requestResponseCode = 400;
             }
@@ -235,7 +256,7 @@ class Page
         }
 
         // Fetch comment data
-        $factoryComment = new CommentFactory();
+        $factoryComment = new CommentApi();
         try {
             $comments = $factoryComment->fetchAll($app, $post['post_id']);
             //todo: need authorship for comments
@@ -283,8 +304,6 @@ class Page
     }
 
     /**
-     * Indicates viewPost application status
-     *
      * @param $app Application
      * @param $post_id integer
      *
@@ -303,9 +322,9 @@ class Page
         }
 
         // Fetch post data
-        $factoryObject = new PostFactory();
+        $apiObject = new PostApi();
         try {
-            $post = $factoryObject->fetch($app, $id);
+            $post = $apiObject->fetch($app, $id);
             if (!$post) {
                 $requestResponseCode = 400;
             }
@@ -351,16 +370,22 @@ class Page
         return new Response($content, $requestResponseCode);
     }
 
+    /**
+     * @param Application $app
+     * @param $user string
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
+     */
     public function newUser(Application $app, $user)
     {
         switch ($user) {
             case 'author':
-                $factoryObject = new AuthorFactory();
+                $apiObject = new AuthorApi();
                 $resultFalseMessage = 'Found an existing author, unable to register another.';
                 $resultTrueMessage = 'Added author.';
                 break;
             case 'commentator':
-                $factoryObject = new CommentatorFactory();
+                $apiObject = new CommentatorApi();
                 $resultFalseMessage = 'Failed registering commentary user. Reason: unknown.';
                 $resultTrueMessage = 'Successfully registered to comment.';
                 break;
@@ -369,7 +394,7 @@ class Page
         }
 
         try {
-            $result = $factoryObject->create($app, $_POST);
+            $result = $apiObject->create($app, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -385,7 +410,10 @@ class Page
     }
 
     /**
-     * Indicates login application status
+     * @param Application $app
+     * @param $user string
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function validateLogin(Application $app, $user)
     {
@@ -395,17 +423,17 @@ class Page
 
         switch ($user) {
             case 'author':
-                $factoryObject = new AuthorFactory();
+                $apiObject = new AuthorApi();
                 break;
             case 'commentator':
-                $factoryObject = new CommentatorFactory();
+                $apiObject = new CommentatorApi();
                 break;
             default:
                 return $app->redirect('/');
         }
 
         try {
-            $result = $factoryObject->login($app, $_POST);
+            $result = $apiObject->login($app, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -421,14 +449,16 @@ class Page
     }
 
     /**
-     * Indicates newPost application status
+     * @param Application $app
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function newPost(Application $app)
     {
-        $factoryObject = new PostFactory();
+        $apiObject = new PostApi();
 
         try {
-            $result = $factoryObject->create($app, $_POST);
+            $result = $apiObject->create($app, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -444,14 +474,17 @@ class Page
     }
 
     /**
-     * Indicates newComment application status
+     * @param Application $app
+     * @param $post_id int
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function newComment(Application $app, $post_id)
     {
-        $factoryObject = new CommentFactory();
+        $apiObject = new CommentApi();
 
         try {
-            $result = $factoryObject->create($app, $post_id, $_POST);
+            $result = $apiObject->create($app, $post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -467,14 +500,17 @@ class Page
     }
 
     /**
-     * Indicates newPost application status
+     * @param Application $app
+     * @param $post_id int
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function editPost(Application $app, $post_id)
     {
-        $factoryObject = new PostFactory();
+        $apiObject = new PostApi();
 
         try {
-            $result = $factoryObject->update($app, $post_id, $_POST);
+            $result = $apiObject->update($app, $post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -490,14 +526,17 @@ class Page
     }
 
     /**
-     * Indicates newPost application status
+     * @param Application $app
+     * @param $post_id int
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function removePost(Application $app, $post_id)
     {
-        $factoryObject = new PostFactory();
+        $apiObject = new PostApi();
 
         try {
-            $result = $factoryObject->delete($app, $post_id);
+            $result = $apiObject->delete($app, $post_id);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -513,14 +552,18 @@ class Page
     }
 
     /**
-     * Indicates newPost application status
+     * @param Application $app
+     * @param $post_id int
+     * @param $comment_id int
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     public function removeComment(Application $app, $post_id, $comment_id)
     {
-        $factoryObject = new CommentFactory();
+        $apiObject = new CommentApi();
 
         try {
-            $result = $factoryObject->delete($app, $comment_id);
+            $result = $apiObject->delete($app, $comment_id);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);

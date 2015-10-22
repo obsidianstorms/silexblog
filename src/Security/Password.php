@@ -32,7 +32,7 @@ class Password
     /**
      * Create hash from plain text
      *
-     * @param $plainText
+     * @param $plainText string
      *
      * @throw \RuntimeException
      *
@@ -50,6 +50,8 @@ class Password
 
     /**
      * Retrieve hash
+     *
+     * @return string
      */
     public function getHash()
     {
@@ -83,5 +85,4 @@ class Password
     {
         return $this->isSecurePassword;
     }
-
 }

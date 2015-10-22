@@ -34,30 +34,46 @@ class AuthorData implements DataInterface
     /**
      * @var string
      */
-    const SQL_SELECT_AUTHORS = 'SELECT * FROM authors';
+    const SQL_SELECT_AUTHORS = '
+        SELECT *
+        FROM authors
+    ';
 
     /**
      * @var string
      */
-    const SQL_SELECT_AUTHOR_BY_ID = 'SELECT * FROM authors WHERE author_id = ?';
+    const SQL_SELECT_AUTHOR_BY_ID = '
+        SELECT *
+        FROM authors
+        WHERE author_id = ?
+    ';
 
     /**
      * @var string
      */
-    const SQL_SELECT_AUTHOR_BY_EMAIL = 'SELECT * FROM authors WHERE email = ?';
+    const SQL_SELECT_AUTHOR_BY_EMAIL = '
+        SELECT *
+        FROM authors
+        WHERE email = ?
+    ';
 
     /**
      * @var string (not password hash)
      */
-    const SQL_SELECT_AUTHOR_BASICS_BY_ID = 'SELECT author_id, email, first_name, last_name
-FROM authors WHERE author_id = ?';
+    const SQL_SELECT_AUTHOR_BASICS_BY_ID = '
+        SELECT
+            author_id,
+            email,
+            first_name,
+            last_name
+        FROM authors
+        WHERE author_id = ?
+    ';
 
 
-    public function __construct(\Silex\Application $app)
-    {
-        $this->setApp($app);
-    }
-
+    /**
+     * @return bool
+     */
     public function doAuthorsExist()
     {
         $sql = static::SQL_SELECT_AUTHORS;
@@ -192,6 +208,4 @@ FROM authors WHERE author_id = ?';
 
         return $author_id;
     }
-
-
 }

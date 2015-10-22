@@ -26,6 +26,10 @@ form textarea {
     width: 200px;
 }
 
+form textarea {
+    height: 200px;
+}
+
 form input[type=submit] {
 }
 

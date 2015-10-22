@@ -1,19 +1,20 @@
 <?php
 
-namespace BasicBlog\Author;
+namespace BasicBlog\Commentator;
 
 use BasicBlog\Security\Password;
 use BasicBlog\Security\ValidationTrait;
+use BasicBlog\Common\UserSessionInterface;
 use Silex\Application;
 
 /**
- * Class AuthorFactory
+ * Class CommentatorApi
  *
- * Handle Author Objects
+ * Handle Commentator Objects
  *
- * @package BasicBlog\Author
+ * @package BasicBlog\Commentator
  */
-class AuthorFactory
+class CommentatorApi implements UserSessionInterface
 {
     use ValidationTrait;
 
@@ -25,20 +26,11 @@ class AuthorFactory
      */
     public function create(Application $app, $data)
     {
-        $dataObject = new AuthorData($app);
-        // Author Data Object
-        // Check if an author already exists, exit if one does
-        if ($dataObject->doAuthorsExist()) {
-            return false;
-        }
-
         // Filtering Raw Data
         $formFieldFilters = [
-            'email_address' => FILTER_VALIDATE_EMAIL,
+            'username' => FILTER_SANITIZE_STRING,
             'password' => FILTER_SANITIZE_STRING,
             'password_confirm' => FILTER_SANITIZE_STRING,
-            'first_name' => FILTER_SANITIZE_STRING,
-            'last_name' => FILTER_SANITIZE_STRING,
         ];
         $validData = $this->checkDataIntegrity($data, $formFieldFilters);
 
@@ -47,19 +39,24 @@ class AuthorFactory
             throw new \InvalidArgumentException('Password fields did not match.', 2);
         }
 
+        $dataObject = new CommentatorData($app);
+        // Commentator Data Object
+        // Check if an username already exists, exit if one does
+        if ($dataObject->doesUsernameExist($validData['username'])) {
+            return false;
+        }
+
         // Password Hashing
         $passwordObject = new Password();
         $validData['password_hash'] = $passwordObject->createHashedPassword($validData['password'])->getHash();
 
         $dataToInsert = [
-            'email' => $validData['email_address'],
+            'username' => $validData['username'],
             'password_hash' => $validData['password_hash'],
-            'first_name' => $validData['first_name'],
-            'last_name' => $validData['last_name'],
         ];
 
         // Save data to database
-        $id = $dataObject->createNewAuthor($dataToInsert);
+        $id = $dataObject->create($dataToInsert);
 
         return $id;
     }
@@ -70,18 +67,18 @@ class AuthorFactory
      *
      * @return bool|mixed
      */
-    public function login(Application $app, $data)
+    public function login(Application $app, array $data)
     {
         // Filtering Raw Data
         $formFieldFilters = [
-            'email_address' => FILTER_VALIDATE_EMAIL,
+            'username' => FILTER_SANITIZE_STRING,
             'password' => FILTER_SANITIZE_STRING,
         ];
         $validData = $this->checkDataIntegrity($data, $formFieldFilters);
 
         // Get records
-        $dataObject = new AuthorData($app);
-        $record = $dataObject->fetchAuthorDataByEmail($validData['email_address']);
+        $dataObject = new CommentatorData($app);
+        $record = $dataObject->fetchCommentatorByUsername($validData['username']);
 
         // Password Hashing
         $passwordObject = new Password();
@@ -94,15 +91,13 @@ class AuthorFactory
         // Update password hash if necessary
         if (!$passwordObject->isSecurePassword()) {
             $newHash = $passwordObject->getHash();
-            $dataObject->updatePassword($record['author_id'], $newHash);
+            $dataObject->updatePassword($record['commentator_id'], $newHash);
         }
 
         // Set Session
-        $app['session']->set('author', [
-            'email_address' => $record['email'],
-            'author_id' => $record['author_id'],
-            'first_name' => $record['first_name'],
-            'last_name' => $record['last_name'],
+        $app['session']->set('commentator', [
+            'username' => $record['username'],
+            'commentator_id' => $record['commentator_id'],
         ]);
         //todo: session timeout
 
@@ -116,12 +111,12 @@ class AuthorFactory
      */
     public function logout(Application $app)
     {
-        $app['session']->remove('author');
+        $app['session']->remove('commentator');
         return true;
     }
 
     /**
-     * Fetch author data, no password
+     * Fetch commentator data, not password
      *
      * @param $app Application
      * @param $id integer
@@ -130,27 +125,25 @@ class AuthorFactory
      */
     public function fetchBasics(Application $app, $id)
     {
-        $dataObject = new AuthorData($app);
-        $data = $dataObject->fetchAuthorBasicDataById($id);
+        $dataObject = new CommentatorData($app);
+        $data = $dataObject->fetchCommentatorBasicDataById($id);
 
         return $data;
     }
 
     /**
-     * Fetch author data
+     * Fetch full commentator data
      *
-     * @param $app \Silex\Application
+     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
     public function fetchFull(Application $app, $id)
     {
-        $dataObject = new AuthorData($app);
-        $data = $dataObject->fetchAuthorFullDataById($id);
+        $dataObject = new CommentatorData($app);
+        $data = $dataObject->fetchCommentatorFullDataById($id);
 
         return $data;
     }
-
-
 }

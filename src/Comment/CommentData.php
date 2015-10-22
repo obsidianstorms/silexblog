@@ -34,13 +34,13 @@ class CommentData implements DataInterface
     /**
      * @var string
      */
-    const SQL_SELECT_COMMENTS_OF_POST_SORTED_CREATED_ASC = 'SELECT * FROM comments
-WHERE post_id = ? ORDER BY created ASC';
+    const SQL_SELECT_COMMENTS_OF_POST_SORTED_CREATED_ASC = '
+        SELECT *
+        FROM comments
+        WHERE post_id = ?
+        ORDER BY created ASC
+    ';
 
-    public function __construct(\Silex\Application $app)
-    {
-        $this->setApp($app);
-    }
 
     /**
      * @param $data
@@ -110,5 +110,4 @@ WHERE post_id = ? ORDER BY created ASC';
         }
         return $id;
     }
-
 }

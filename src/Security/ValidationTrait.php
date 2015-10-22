@@ -11,6 +11,12 @@ namespace BasicBlog\Security;
  */
 trait ValidationTrait
 {
+    /**
+     * @param $data array
+     * @param $formFieldFilters array
+     *
+     * @return array
+     */
     protected function checkDataIntegrity($data, $formFieldFilters)
     {
         $filteredData = [];
@@ -28,5 +34,4 @@ trait ValidationTrait
 
         return $filteredData;
     }
-
 }

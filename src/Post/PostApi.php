@@ -7,13 +7,13 @@ use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
 /**
- * Class PostFactory
+ * Class PostApi
  *
  * Handle Post Objects
  *
  * @package BasicBlog\Post
  */
-class PostFactory
+class PostApi
 {
     use ValidationTrait;
 

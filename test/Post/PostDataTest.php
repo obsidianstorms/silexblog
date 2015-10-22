@@ -15,25 +15,6 @@ use Mockery as m;
  */
 class PostDataTest extends PHPUnit_Framework_TestCase
 {
-    /**
-     * Test fetchPostDataById() throws InvalidArgumentException if provided
-     * invalid parameter
-     */
-    public function testFetchPostDataByIdThrowsInvalidArgumentException()
-    {
-        $this->setExpectedException(
-            'InvalidArgumentException',
-            PostData::MESSAGE_NOT_INTEGER,
-            0
-        );
-
-        $mockId = 'invalidid';
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-
-        $object = new PostData($mockApp);
-        $object->fetchPostDataById($mockId);
-    }
 
     /**
      * Test fetchPostDataById() throws UnexpectedValueException if fail to read
@@ -62,142 +43,188 @@ class PostDataTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Test fetchPostDataById() returns array if provided with id
+     * Test fetchPostDataById() throws InvalidArgumentException if provided
+     * invalid parameter
      */
-    public function testFetchPostDataByIdReturnsData()
-    {
-        $mockReturnedArray = ['key' => 'value'];
-        $mockId = 1;
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAssoc')
-            ->with(PostData::SQL_SELECT_SINGLE_POST_BY_ID, [$mockId])
-            ->andReturn($mockReturnedArray);
-
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-        $mockApp['db'] = $mockDb;
-
-        $object = new PostData($mockApp);
-        $returned = $object->fetchPostDataById($mockId);
-
-        $this->assertSame($mockReturnedArray, $returned);
-    }
-
-    /**
-     * Test fetchPostCollectionData() throws UnexpectedValueException if fail
-     * to read from database
-     */
-    public function testFetchPostCollectionDataThrowsUnexpectedValueException()
-    {
-        $this->setExpectedException(
-            'UnexpectedValueException',
-            PostData::MESSAGE_NO_RESULT_FOUND,
-            2
-        );
-
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAll')
-            ->with(PostData::SQL_SELECT_ALL_POSTS_SORTED_CREATED_ASC)
-            ->andReturn(false);
-
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-        $mockApp['db'] = $mockDb;
-
-        $object = new PostData($mockApp);
-        $object->fetchPostCollectionData();
-    }
-
-    /**
-     * Test fetchPostCollectionData() returns array
-     */
-    public function testFetchPostCollectionDataReturnsData()
-    {
-        $mockReturnedArray = [
-            ['key' => 'value'],
-            ['key2' => 'value2'],
-        ];
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAll')
-            ->with(PostData::SQL_SELECT_ALL_POSTS_SORTED_CREATED_ASC)
-            ->andReturn($mockReturnedArray);
-
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-        $mockApp['db'] = $mockDb;
-
-        $object = new PostData($mockApp);
-        $returned = $object->fetchPostCollectionData();
-
-        $this->assertSame($mockReturnedArray, $returned);
-    }
-
-    /**
-     * Test fetchPostContentDataById() throws InvalidArgumentException if
-     * provided invalid parameter
-     */
-    public function testFetchPostContentDataByIdThrowsInvalidArgumentException()
+    public function testFetchPostDataByIdThrowsInvalidArgumentException()
     {
         $this->setExpectedException(
             'InvalidArgumentException',
             PostData::MESSAGE_NOT_INTEGER,
-            3
+            0
         );
 
         $mockId = 'invalidid';
-        $mockApp = m::mock(\Silex\Application::class);
-
-        $object = new PostData($mockApp);
-        $object->fetchPostContentDataById($mockId);
-    }
-
-    /**
-     * Test fetchPostContentDataById() throws UnexpectedValueException if fail
-     * to read from database
-     */
-    public function testFetchPostContentDataByIdThrowsUnexpectedValueException()
-    {
-        $this->setExpectedException(
-            'UnexpectedValueException',
-            PostData::MESSAGE_NO_RESULT_FOUND,
-            4
-        );
-
-        $mockId = 1;
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAssoc')
-            ->with(PostData::SQL_SELECT_POST_CONTENT_BY_ID, [$mockId])
-            ->andReturn(false);
-
         $mockApp = m::mock(\Silex\Application::class)
             ->makePartial();
-        $mockApp['db'] = $mockDb;
 
         $object = new PostData($mockApp);
-        $object->fetchPostContentDataById($mockId);
+        $object->fetchPostDataById($mockId);
     }
 
-    /**
-     * Test fetchPostContentDataById() returns array if provided with id
-     */
-    public function testFetchPostContentDataByIdReturnsData()
-    {
-        $mockReturnedArray = ['key' => 'value'];
-        $mockId = 1;
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAssoc')
-            ->with(PostData::SQL_SELECT_POST_CONTENT_BY_ID, [$mockId])
-            ->andReturn($mockReturnedArray);
-
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-        $mockApp['db'] = $mockDb;
-
-        $object = new PostData($mockApp);
-        $returned = $object->fetchPostContentDataById($mockId);
-
-        $this->assertSame($mockReturnedArray, $returned);
-    }
+//    /**
+//     * Test fetchPostDataById() throws UnexpectedValueException if fail to read
+//     * from database
+//     */
+//    public function testFetchPostDataByIdThrowsUnexpectedValueException()
+//    {
+//        $this->setExpectedException(
+//            'UnexpectedValueException',
+//            PostData::MESSAGE_NO_RESULT_FOUND,
+//            1
+//        );
+//
+//        $mockId = 1;
+//        $mockDb = m::mock(\stdClass::class);
+//        $mockDb->shouldReceive('fetchAssoc')
+//            ->with(PostData::SQL_SELECT_SINGLE_POST_BY_ID, [$mockId])
+//            ->andReturn(false);
+//
+//        $mockApp = m::mock(\Silex\Application::class)
+//            ->makePartial();
+//        $mockApp['db'] = $mockDb;
+//
+//        $object = new PostData($mockApp);
+//        $object->fetchPostDataById($mockId);
+//    }
+//
+//    /**
+//     * Test fetchPostDataById() returns array if provided with id
+//     */
+//    public function testFetchPostDataByIdReturnsData()
+//    {
+//        $mockReturnedArray = ['key' => 'value'];
+//        $mockId = 1;
+//        $mockDb = m::mock(\stdClass::class);
+//        $mockDb->shouldReceive('fetchAssoc')
+//            ->with(PostData::SQL_SELECT_SINGLE_POST_BY_ID, [$mockId])
+//            ->andReturn($mockReturnedArray);
+//
+//        $mockApp = m::mock(\Silex\Application::class)
+//            ->makePartial();
+//        $mockApp['db'] = $mockDb;
+//
+//        $object = new PostData($mockApp);
+//        $returned = $object->fetchPostDataById($mockId);
+//
+//        $this->assertSame($mockReturnedArray, $returned);
+//    }
+//
+//    /**
+//     * Test fetchPostCollectionData() throws UnexpectedValueException if fail
+//     * to read from database
+//     */
+//    public function testFetchPostCollectionDataThrowsUnexpectedValueException()
+//    {
+//        $this->setExpectedException(
+//            'UnexpectedValueException',
+//            PostData::MESSAGE_NO_RESULT_FOUND,
+//            2
+//        );
+//
+//        $mockDb = m::mock(\stdClass::class);
+//        $mockDb->shouldReceive('fetchAll')
+//            ->with(PostData::SQL_SELECT_ALL_POSTS_SORTED_CREATED_ASC)
+//            ->andReturn(false);
+//
+//        $mockApp = m::mock(\Silex\Application::class)
+//            ->makePartial();
+//        $mockApp['db'] = $mockDb;
+//
+//        $object = new PostData($mockApp);
+//        $object->fetchPostCollectionData();
+//    }
+//
+//    /**
+//     * Test fetchPostCollectionData() returns array
+//     */
+//    public function testFetchPostCollectionDataReturnsData()
+//    {
+//        $mockReturnedArray = [
+//            ['key' => 'value'],
+//            ['key2' => 'value2'],
+//        ];
+//        $mockDb = m::mock(\stdClass::class);
+//        $mockDb->shouldReceive('fetchAll')
+//            ->with(PostData::SQL_SELECT_ALL_POSTS_SORTED_CREATED_ASC)
+//            ->andReturn($mockReturnedArray);
+//
+//        $mockApp = m::mock(\Silex\Application::class)
+//            ->makePartial();
+//        $mockApp['db'] = $mockDb;
+//
+//        $object = new PostData($mockApp);
+//        $returned = $object->fetchPostCollectionData();
+//
+//        $this->assertSame($mockReturnedArray, $returned);
+//    }
+//
+//    /**
+//     * Test fetchPostContentDataById() throws InvalidArgumentException if
+//     * provided invalid parameter
+//     */
+//    public function testFetchPostContentDataByIdThrowsInvalidArgumentException()
+//    {
+//        $this->setExpectedException(
+//            'InvalidArgumentException',
+//            PostData::MESSAGE_NOT_INTEGER,
+//            3
+//        );
+//
+//        $mockId = 'invalidid';
+//        $mockApp = m::mock(\Silex\Application::class);
+//
+//        $object = new PostData($mockApp);
+//        $object->fetchPostContentDataById($mockId);
+//    }
+//
+//    /**
+//     * Test fetchPostContentDataById() throws UnexpectedValueException if fail
+//     * to read from database
+//     */
+//    public function testFetchPostContentDataByIdThrowsUnexpectedValueException()
+//    {
+//        $this->setExpectedException(
+//            'UnexpectedValueException',
+//            PostData::MESSAGE_NO_RESULT_FOUND,
+//            4
+//        );
+//
+//        $mockId = 1;
+//        $mockDb = m::mock(\stdClass::class);
+//        $mockDb->shouldReceive('fetchAssoc')
+//            ->with(PostData::SQL_SELECT_POST_CONTENT_BY_ID, [$mockId])
+//            ->andReturn(false);
+//
+//        $mockApp = m::mock(\Silex\Application::class)
+//            ->makePartial();
+//        $mockApp['db'] = $mockDb;
+//
+//        $object = new PostData($mockApp);
+//        $object->fetchPostContentDataById($mockId);
+//    }
+//
+//    /**
+//     * Test fetchPostContentDataById() returns array if provided with id
+//     */
+//    public function testFetchPostContentDataByIdReturnsData()
+//    {
+//        $mockReturnedArray = ['key' => 'value'];
+//        $mockId = 1;
+//        $mockDb = m::mock(\stdClass::class);
+//        $mockDb->shouldReceive('fetchAssoc')
+//            ->with(PostData::SQL_SELECT_POST_CONTENT_BY_ID, [$mockId])
+//            ->andReturn($mockReturnedArray);
+//
+//        $mockApp = m::mock(\Silex\Application::class)
+//            ->makePartial();
+//        $mockApp['db'] = $mockDb;
+//
+//        $object = new PostData($mockApp);
+//        $returned = $object->fetchPostContentDataById($mockId);
+//
+//        $this->assertSame($mockReturnedArray, $returned);
+//    }
 
 
 

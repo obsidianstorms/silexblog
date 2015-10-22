@@ -17,7 +17,7 @@ trait ValidationTrait
      *
      * @return array
      */
-    protected function checkDataIntegrity($data, $formFieldFilters)
+    public function checkDataIntegrity($data, $formFieldFilters)
     {
         $filteredData = [];
 

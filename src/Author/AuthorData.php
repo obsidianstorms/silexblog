@@ -2,8 +2,8 @@
 
 namespace BasicBlog\Author;
 
-use BasicBlog\Common\DataInterface;
-use BasicBlog\Common\DataTrait;
+use BasicBlog\Common\ApplicationAwareInterface;
+use BasicBlog\Common\ApplicationAwareTrait;
 
 /**
  * Class AuthorData
@@ -12,9 +12,9 @@ use BasicBlog\Common\DataTrait;
  *
  * @package BasicBlog\Author
  */
-class AuthorData implements DataInterface
+class AuthorData implements ApplicationAwareInterface
 {
-    use DataTrait;
+    use ApplicationAwareTrait;
 
     /**
      * @var string

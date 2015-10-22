@@ -2,8 +2,8 @@
 
 namespace BasicBlog\Commentator;
 
-use BasicBlog\Common\DataInterface;
-use BasicBlog\Common\DataTrait;
+use BasicBlog\Common\ApplicationAwareInterface;
+use BasicBlog\Common\ApplicationAwareTrait;
 
 /**
  * Class CommentatorData
@@ -12,9 +12,9 @@ use BasicBlog\Common\DataTrait;
  *
  * @package BasicBlog\Commentator
  */
-class CommentatorData implements DataInterface
+class CommentatorData implements ApplicationAwareInterface
 {
-    use DataTrait;
+    use ApplicationAwareTrait;
 
     /**
      * @var string

@@ -3,11 +3,11 @@
 namespace BasicBlog\Common;
 
 /**
- * interface DataInterface
+ * interface ApplicationAwareInterface
  *
  * @package BasicBlog\Common
  */
-interface DataInterface
+interface ApplicationAwareInterface
 {
     /**
      * @param \Silex\Application $app
@@ -25,4 +25,14 @@ interface DataInterface
      * @return static
      */
     public function setApp(\Silex\Application $app);
+
+    /**
+     * @return \Silex\Provider\DoctrineServiceProvider
+     */
+    public function getDb();
+
+    /**
+     * @return \Silex\Provider\SessionServiceProvider
+     */
+    public function getSession();
 }

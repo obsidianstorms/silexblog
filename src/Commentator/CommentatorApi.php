@@ -2,9 +2,11 @@
 
 namespace BasicBlog\Commentator;
 
+use BasicBlog\Common\UserSessionInterface;
+use BasicBlog\Common\DataAwareInterface;
+use BasicBlog\Common\DataAwareTrait;
 use BasicBlog\Security\Password;
 use BasicBlog\Security\ValidationTrait;
-use BasicBlog\Common\UserSessionInterface;
 use Silex\Application;
 
 /**
@@ -14,17 +16,17 @@ use Silex\Application;
  *
  * @package BasicBlog\Commentator
  */
-class CommentatorApi implements UserSessionInterface
+class CommentatorApi implements DataAwareInterface, UserSessionInterface
 {
     use ValidationTrait;
+    use DataAwareTrait;
 
     /**
-     * @param $app Application
      * @param $data
      *
      * @return bool|mixed
      */
-    public function create(Application $app, $data)
+    public function create($data)
     {
         // Filtering Raw Data
         $formFieldFilters = [
@@ -39,7 +41,7 @@ class CommentatorApi implements UserSessionInterface
             throw new \InvalidArgumentException('Password fields did not match.', 2);
         }
 
-        $dataObject = new CommentatorData($app);
+        $dataObject = $this->getDataObject();
         // Commentator Data Object
         // Check if an username already exists, exit if one does
         if ($dataObject->doesUsernameExist($validData['username'])) {
@@ -62,12 +64,11 @@ class CommentatorApi implements UserSessionInterface
     }
 
     /**
-     * @param $app Application
      * @param $data
      *
      * @return bool|mixed
      */
-    public function login(Application $app, array $data)
+    public function login(array $data)
     {
         // Filtering Raw Data
         $formFieldFilters = [
@@ -77,7 +78,7 @@ class CommentatorApi implements UserSessionInterface
         $validData = $this->checkDataIntegrity($data, $formFieldFilters);
 
         // Get records
-        $dataObject = new CommentatorData($app);
+        $dataObject = $this->getDataObject();
         $record = $dataObject->fetchCommentatorByUsername($validData['username']);
 
         // Password Hashing
@@ -109,23 +110,25 @@ class CommentatorApi implements UserSessionInterface
      *
      * @return bool|mixed
      */
-    public function logout(Application $app)
+    public function logout()
     {
-        $app['session']->remove('commentator');
-        return true;
+        $dataObject = $this->getDataObject();
+        if ($dataObject->getSession()->remove('commentator')) {
+            return true;
+        }
+        return false;
     }
 
     /**
      * Fetch commentator data, not password
      *
-     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
-    public function fetchBasics(Application $app, $id)
+    public function fetchBasics($id)
     {
-        $dataObject = new CommentatorData($app);
+        $dataObject = $this->getDataObject();
         $data = $dataObject->fetchCommentatorBasicDataById($id);
 
         return $data;
@@ -134,14 +137,13 @@ class CommentatorApi implements UserSessionInterface
     /**
      * Fetch full commentator data
      *
-     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
-    public function fetchFull(Application $app, $id)
+    public function fetchFull($id)
     {
-        $dataObject = new CommentatorData($app);
+        $dataObject = $this->getDataObject();
         $data = $dataObject->fetchCommentatorFullDataById($id);
 
         return $data;

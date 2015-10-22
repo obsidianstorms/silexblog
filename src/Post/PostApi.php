@@ -3,6 +3,8 @@
 namespace BasicBlog\Post;
 
 use BasicBlog\Comment\CommentData;
+use BasicBlog\Common\DataAwareInterface;
+use BasicBlog\Common\DataAwareTrait;
 use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
@@ -13,24 +15,28 @@ use Silex\Application;
  *
  * @package BasicBlog\Post
  */
-class PostApi
+class PostApi implements DataAwareInterface
 {
     use ValidationTrait;
+    use DataAwareTrait;
 
     /**
-     * @param $app Application
      * @param $data array
      *
      * @return bool|mixed
      */
-    public function create(Application $app, array $data)
+    public function create(array $data)
     {
         // Empty field check
         if (empty($data['title'])) {
             throw new \InvalidArgumentException('Title is empty.', 1);
         }
-        if (null === $author = $app['session']->get('author')) {
-            throw new \InvalidArgumentException('Author is not logged in.', 3);
+
+        $postDataObject = $this->getDataObject();
+        $author = $postDataObject->getSession()->get('author');
+        //todo: convert to session object?
+        if (is_null($author)) {
+            throw new \InvalidArgumentException('Author is not logged in.', 2);
         }
 
         // Filtering Raw Data
@@ -44,10 +50,7 @@ class PostApi
         $formFieldFilters = [
             'author_id' => FILTER_VALIDATE_INT,
         ];
-        $author = $app['session']->get('author');
         $validAuthorData = $this->checkDataIntegrity($author, $formFieldFilters);
-
-        $postDataObject = new PostData($app);
 
         // Save data to database
         $dataToInsert = [
@@ -57,6 +60,10 @@ class PostApi
 
         $post_id = $postDataObject->create($dataToInsert);
 
+        if (!$post_id) {
+            return false;
+        }
+
         // Save data to database
         $dataToInsertBody = [
             'post_id' => $post_id,
@@ -65,27 +72,29 @@ class PostApi
 
         $content_id = $postDataObject->createContent($dataToInsertBody);
 
-        if ($post_id && $content_id) {
-            return $post_id;
+        if (!$content_id) {
+            return false;
         }
-        return false;
+        return $post_id;
     }
 
     /**
-     * @param $app Application
      * @param $post_id int
      * @param $data array
      *
      * @return bool|mixed
      */
-    public function update(Application $app, $post_id, array $data)
+    public function update($post_id, array $data)
     {
         // Empty field check
         if (empty($data['title'])) {
-            throw new \InvalidArgumentException('Title is empty.', 1);
+            throw new \InvalidArgumentException('Title is empty.', 3);
         }
-        if (null === $author = $app['session']->get('author')) {
-            throw new \InvalidArgumentException('Author is not logged in.', 3);
+
+        $postDataObject = $this->getDataObject();
+        $author = $postDataObject->getSession()->get('author');
+        if (is_null($author)) {
+            throw new \InvalidArgumentException('Author is not logged in.', 4);
         }
 
         // Filtering Raw Data
@@ -100,28 +109,23 @@ class PostApi
         ];
         $validId = $this->checkDataIntegrity(['post_id' => $post_id], $formFieldFilters);
 
-
-        $postDataObject = new PostData($app);
-
         $resultTitle = $postDataObject->update($validId['post_id'], ['title' => $validData['title']]);
         $resultBody = $postDataObject->updateContent($validId['post_id'], ['body' => $validData['body']]);
 
-        if ($resultTitle && $resultBody) {
-            return $post_id;
+        if (!$resultTitle || !$resultBody) {
+            return false;
         }
-        return false;
+        return $post_id;
     }
 
     /**
      * Fetch a list of post records
      *
-     * @param $app Application
-     *
      * @return array
      */
-    public function fetchAll(Application $app)
+    public function fetchAll()
     {
-        $postDataObject = new PostData($app);
+        $postDataObject = $this->getDataObject();
 
         // Fetch data from database
         $records = $postDataObject->fetchPosts();
@@ -132,14 +136,13 @@ class PostApi
     /**
      * Fetch a post record
      *
-     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
-    public function fetch(Application $app, $id)
+    public function fetch($id)
     {
-        $postDataObject = new PostData($app);
+        $postDataObject = $this->getDataObject();
         $postData = $postDataObject->fetchPostDataById($id);
         $postContentData = $postDataObject->fetchPostContentDataById($id);
 
@@ -149,16 +152,15 @@ class PostApi
     }
 
     /**
-     * Fetch a post record
+     * Delete a post record
      *
-     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
-    public function delete(Application $app, $id)
+    public function delete($id)
     {
-        $postDataObject = new PostData($app);
+        $postDataObject = $this->getDataObject();
 
         $formFieldFilters = [
             'post_id' => FILTER_VALIDATE_INT,
@@ -168,10 +170,7 @@ class PostApi
         $postData = $postDataObject->delete($validData['post_id']);
         $postContentData = $postDataObject->deleteContent($validData['post_id']);
 
-        $commentDataObject = new CommentData($app);
-        $commentData = $commentDataObject->deleteAllForPost($validData['post_id']);
-
-        if ($postData && $postContentData && $commentData) {
+        if ($postData && $postContentData) {
             return true;
         }
         return false;

@@ -3,11 +3,11 @@
 namespace BasicBlog\Common;
 
 /**
- * interface DataTrait
+ * interface ApplicationAwareTrait
  *
  * @package BasicBlog\Common
  */
-trait DataTrait
+trait ApplicationAwareTrait
 {
     /**
      * @var \Silex\Application
@@ -19,7 +19,7 @@ trait DataTrait
      */
     public function __construct(\Silex\Application $app)
     {
-        $this->setApp($app);
+        $this->app = $app;
     }
 
     /**
@@ -37,5 +37,21 @@ trait DataTrait
     {
         $this->app = $app;
         return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getDb()
+    {
+        return $this->app['db'];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getSession()
+    {
+        return $this->app['session'];
     }
 }

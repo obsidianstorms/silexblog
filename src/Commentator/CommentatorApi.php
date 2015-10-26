@@ -5,7 +5,7 @@ namespace BasicBlog\Commentator;
 use BasicBlog\Common\UserSessionInterface;
 use BasicBlog\Common\DataAwareInterface;
 use BasicBlog\Common\DataAwareTrait;
-use BasicBlog\Security\Password;
+use BasicBlog\Security\PasswordAwareTrait;
 use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
@@ -20,6 +20,7 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
 {
     use ValidationTrait;
     use DataAwareTrait;
+    use PasswordAwareTrait;
 
     /**
      * @param $data
@@ -38,7 +39,7 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
 
         // Password matching
         if ($validData['password'] != $validData['password_confirm']) {
-            throw new \InvalidArgumentException('Password fields did not match.', 2);
+            throw new \InvalidArgumentException('Password fields did not match.', 1);
         }
 
         $dataObject = $this->getDataObject();
@@ -49,7 +50,7 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
         }
 
         // Password Hashing
-        $passwordObject = new Password();
+        $passwordObject = $this->getPasswordObject();
         $validData['password_hash'] = $passwordObject->createHashedPassword($validData['password'])->getHash();
 
         $dataToInsert = [
@@ -82,7 +83,7 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
         $record = $dataObject->fetchCommentatorByUsername($validData['username']);
 
         // Password Hashing
-        $passwordObject = new Password();
+        $passwordObject = $this->getPasswordObject();
         $isValidPassword = $passwordObject->verifyPassword($validData['password'], $record['password_hash']);
 
         if (!$isValidPassword) {
@@ -96,7 +97,7 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
         }
 
         // Set Session
-        $app['session']->set('commentator', [
+        $dataObject->getSession()->set('commentator', [
             'username' => $record['username'],
             'commentator_id' => $record['commentator_id'],
         ]);
@@ -106,9 +107,7 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
     }
 
     /**
-     * @param $app Application
-     *
-     * @return bool|mixed
+     * @return bool
      */
     public function logout()
     {

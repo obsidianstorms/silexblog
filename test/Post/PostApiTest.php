@@ -16,6 +16,10 @@ use Mockery as m;
 class PostApiTest extends PHPUnit_Framework_TestCase
 {
 
+    /**
+     * Test create() method throws InvalidArgumentException if empty expected
+     * fields
+     */
     public function testCreateThrowsInvalidArgumentExceptionIfEmptyTitle()
     {
         $this->setExpectedException(
@@ -35,6 +39,10 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $object->create($mockInsertData);
     }
 
+    /**
+     * Test create() method throws InvalidArgumentException if author session
+     * not exist
+     */
     public function testCreateThrowsInvalidArgumentExceptionIfAuthorNotLoggedIn()
     {
         $this->setExpectedException(
@@ -60,6 +68,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $object->create($mockInsertData);
     }
 
+    /**
+     * Test create() method returns false if query fails
+     */
     public function testCreateReturnsFalseIfPostQueryFails()
     {
         $mockInsertData = [
@@ -93,6 +104,10 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($returned);
     }
 
+
+    /**
+     * Test create() method returns false if query fails
+     */
     public function testCreateReturnsFalseIfPostContentQueryFails()
     {
         $mockPostId = 1;
@@ -134,6 +149,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($returned);
     }
 
+    /**
+     * Test create() method returns true if query succeeds
+     */
     public function testCreateReturnsPostIdIfQuerySucceeds()
     {
         $mockPostId = 1;
@@ -175,7 +193,10 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertSame($mockPostId, $returned);
     }
 
-
+    /**
+     * Test update() method throws InvalidArgumentException if empty expected
+     * fields
+     */
     public function testUpdateThrowsInvalidArgumentExceptionIfEmptyTitle()
     {
         $this->setExpectedException(
@@ -196,6 +217,10 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $object->update($mockPostId, $mockData);
     }
 
+    /**
+     * Test update() method throws InvalidArgumentException no author session
+     * exists
+     */
     public function testUpdateThrowsInvalidArgumentExceptionIfAuthorNotLoggedIn()
     {
         $this->setExpectedException(
@@ -222,6 +247,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $object->update($mockPostId, $mockData);
     }
 
+    /**
+     * Test update() method returns false if query fails
+     */
     public function testUpdateReturnsFalseIfPostQueryFails()
     {
         $mockPostId = 1;
@@ -261,6 +289,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($returned);
     }
 
+    /**
+     * Test update() method returns false if query fails
+     */
     public function testUpdateReturnsFalseIfPostContentQueryFails()
     {
         $mockPostId = 1;
@@ -299,6 +330,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($returned);
     }
 
+    /**
+     * Test update() method returns post id if query succeeds
+     */
     public function testUpdateReturnsPostIdIfQuerySucceeds()
     {
         $mockPostId = 1;
@@ -338,6 +372,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertSame($mockPostId, $returned);
     }
 
+    /**
+     * Test fetchAll() method returns array
+     */
     public function testFetchAllReturnsData()
     {
         $mockData = [
@@ -358,6 +395,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertSame($mockData, $returned);
     }
 
+    /**
+     * Test fetchA() method returns array if provided id
+     */
     public function testFetchReturnsDataIfProvidedId()
     {
         $mockId = 1;
@@ -389,7 +429,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertSame($mockData, $returned);
     }
 
-
+    /**
+     * Test delete() returns false if query fails
+     */
     public function testDeleteReturnsFalseIfQueryFails()
     {
         $mockPostId = 1;
@@ -428,6 +470,9 @@ class PostApiTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($returned);
     }
 
+    /**
+     * Test delete() returns post id if query succeeds
+     */
     public function testDeleteReturnsPostIdIfQuerySucceeds()
     {
         $mockPostId = 1;

@@ -3,7 +3,7 @@
 namespace BasicBlog\Common;
 
 /**
- * interface DataAwareTrait
+ * trait DataAwareTrait
  *
  * @package BasicBlog\Common
  */
@@ -19,6 +19,7 @@ trait DataAwareTrait
      */
     public function __construct($dataObject)
     {
+        //todo: typehinting likely with dataObject refactor
         $this->dataObject = $dataObject;
     }
 

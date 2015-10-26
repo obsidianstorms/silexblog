@@ -11,8 +11,11 @@ use BasicBlog\Author\AuthorApi;
 use BasicBlog\Author\AuthorData;
 use BasicBlog\Comment\CommentApi;
 use BasicBlog\Comment\CommentData;
+use BasicBlog\Security\Password;
 use BasicBlog\Commentator\CommentatorApi;
+use BasicBlog\Commentator\CommentatorFactory;
 use BasicBlog\Commentator\CommentatorData;
+
 
 /**
  * Class Page
@@ -262,7 +265,7 @@ class Page
         // Fetch comment data
         $apiCommentObject = new CommentApi(new CommentData($app));
         try {
-            $comments = $apiCommentObject->fetchAll($post['post_id']);
+            $comments = $apiCommentObject->fetchAll($post['post_id'], new CommentatorFactory($app));
             //todo: need authorship for comments
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
@@ -397,6 +400,8 @@ class Page
                 return $app->redirect('/');
         }
 
+        $apiObject->setPasswordObject(new Password());
+
         try {
             $result = $apiObject->create($_POST);
         } catch (\InvalidArgumentException $e) {
@@ -435,6 +440,8 @@ class Page
             default:
                 return $app->redirect('/');
         }
+
+        $apiObject->setPasswordObject(new Password());
 
         try {
             $result = $apiObject->login($_POST);

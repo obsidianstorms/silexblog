@@ -72,7 +72,7 @@ class CommentData implements ApplicationAwareInterface
     public function fetchCommentsByPostId($id)
     {
         $sql = static::SQL_SELECT_COMMENTS_OF_POST_SORTED_CREATED_ASC;
-        $data = $this->app['db']->fetchAll($sql, array((int) $id));
+        $data = $this->app['db']->fetchAll($sql, [(int) $id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 2);

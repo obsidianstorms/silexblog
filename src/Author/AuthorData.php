@@ -80,7 +80,7 @@ class AuthorData implements ApplicationAwareInterface
         $data = $this->app['db']->fetchAssoc($sql);
 
         if ($data === false) {
-            $this->app['monolog']->addInfo("Query found no authors.");
+            $this->app['monolog']->addInfo('Query found no authors.');
             return false;
         }
 
@@ -125,7 +125,7 @@ class AuthorData implements ApplicationAwareInterface
         }
 
         $sql = static::SQL_SELECT_AUTHOR_BASICS_BY_ID;
-        $data = $this->app['db']->fetchAssoc($sql, array((int)$id));
+        $data = $this->app['db']->fetchAssoc($sql, [(int)$id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 1);
@@ -147,14 +147,14 @@ class AuthorData implements ApplicationAwareInterface
     public function fetchAuthorDataById($id)
     {
         if (!is_integer($id)) {
-            throw new \InvalidArgumentException(static::MESSAGE_NOT_INTEGER, 0);
+            throw new \InvalidArgumentException(static::MESSAGE_NOT_INTEGER, 2);
         }
 
         $sql = static::SQL_SELECT_AUTHOR_BY_ID;
-        $data = $this->app['db']->fetchAssoc($sql, array((int)$id));
+        $data = $this->app['db']->fetchAssoc($sql, [(int)$id]);
 
         if ($data === false) {
-            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 1);
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 3);
         }
 
         return $data;
@@ -176,7 +176,7 @@ class AuthorData implements ApplicationAwareInterface
         if ($email === false) {
             throw new \InvalidArgumentException(
                 static::MESSAGE_NOT_EMAIL,
-                2
+                5
             );
         }
 
@@ -184,7 +184,7 @@ class AuthorData implements ApplicationAwareInterface
         $data = $this->app['db']->fetchAssoc($sql, array($email));
 
         if ($data === false) {
-            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 3);
+            throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 6);
         }
 
         return $data;

@@ -3,6 +3,7 @@
 namespace BasicBlog\Comment;
 
 use BasicBlog\Commentator\CommentatorData;
+use BasicBlog\Commentator\CommentatorFactory;
 use BasicBlog\Common\DataAwareInterface;
 use BasicBlog\Common\DataAwareTrait;
 use BasicBlog\Security\ValidationTrait;
@@ -72,17 +73,16 @@ class CommentApi implements DataAwareInterface
      *
      * @return array
      */
-    public function fetchAll($post_id)
+    public function fetchAll($post_id, CommentatorFactory $factory)
     {
         // Comment data
         $commentDataObject = $this->getDataObject();
         $commentRecords = $commentDataObject->fetchCommentsByPostId($post_id);
 
         $records = [];
-        $app = $commentDataObject->getApp();
         // Commentator data
         foreach ($commentRecords as $comment) {
-            $commentatorDataObject = new CommentatorData($app);
+            $commentatorDataObject = $factory->getNewCommentator();
             $commentator = $commentatorDataObject->fetchCommentatorBasicDataById($comment['commentator_id']);
             $records[] = array_merge($comment, $commentator);
         }
@@ -91,7 +91,7 @@ class CommentApi implements DataAwareInterface
     }
 
     /**
-     * Fetch a post record
+     * delete a comment record
      *
      * @param $id integer
      *
@@ -109,7 +109,7 @@ class CommentApi implements DataAwareInterface
     }
 
     /**
-     * Delete a post record
+     * Delete all comments for a post record
      *
      * @param $id integer
      *

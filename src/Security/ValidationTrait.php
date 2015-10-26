@@ -25,6 +25,7 @@ trait ValidationTrait
         foreach ($formFieldFilters as $key => $filter) {
             $filteredData[$key] = filter_var($data[$key], $filter);
         }
+        //todo: check if keys exist or trust programmer to call only with valid array?
 
         // Check if any returned false
         if (in_array(false, $filteredData, true)) {

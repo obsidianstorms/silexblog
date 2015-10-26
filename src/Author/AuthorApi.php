@@ -5,7 +5,7 @@ namespace BasicBlog\Author;
 use BasicBlog\Common\UserSessionInterface;
 use BasicBlog\Common\DataAwareInterface;
 use BasicBlog\Common\DataAwareTrait;
-use BasicBlog\Security\Password;
+use BasicBlog\Security\PasswordAwareTrait;
 use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
@@ -20,6 +20,7 @@ class AuthorApi implements DataAwareInterface, UserSessionInterface
 {
     use ValidationTrait;
     use DataAwareTrait;
+    use PasswordAwareTrait;
 
     /**
      * @param $data
@@ -47,11 +48,11 @@ class AuthorApi implements DataAwareInterface, UserSessionInterface
 
         // Password matching
         if ($validData['password'] != $validData['password_confirm']) {
-            throw new \InvalidArgumentException('Password fields did not match.', 2);
+            throw new \InvalidArgumentException('Password fields did not match.', 1);
         }
 
         // Password Hashing
-        $passwordObject = new Password();
+        $passwordObject = $this->getPasswordObject();
         $validData['password_hash'] = $passwordObject->createHashedPassword($validData['password'])->getHash();
 
         $dataToInsert = [
@@ -86,7 +87,7 @@ class AuthorApi implements DataAwareInterface, UserSessionInterface
         $record = $dataObject->fetchAuthorDataByEmail($validData['email_address']);
 
         // Password Hashing
-        $passwordObject = new Password();
+        $passwordObject = $this->getPasswordObject();
         $isValidPassword = $passwordObject->verifyPassword($validData['password'], $record['password_hash']);
 
         if (!$isValidPassword) {

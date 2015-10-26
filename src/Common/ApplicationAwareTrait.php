@@ -3,7 +3,7 @@
 namespace BasicBlog\Common;
 
 /**
- * interface ApplicationAwareTrait
+ * trait ApplicationAwareTrait
  *
  * @package BasicBlog\Common
  */

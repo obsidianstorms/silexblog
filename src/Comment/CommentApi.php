@@ -3,6 +3,9 @@
 namespace BasicBlog\Comment;
 
 use BasicBlog\Commentator\CommentatorData;
+use BasicBlog\Commentator\CommentatorFactory;
+use BasicBlog\Common\DataAwareInterface;
+use BasicBlog\Common\DataAwareTrait;
 use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
@@ -13,18 +16,18 @@ use Silex\Application;
  *
  * @package BasicBlog\Comment
  */
-class CommentApi
+class CommentApi implements DataAwareInterface
 {
     use ValidationTrait;
+    use DataAwareTrait;
 
     /**
-     * @param $app Application
      * @param $post_id int|string
      * @param $data array
      *
      * @return bool|mixed
      */
-    public function create(Application $app, $post_id, array $data)
+    public function create($post_id, array $data)
     {
         // Empty field check
         if (empty($data['body'])) {
@@ -46,7 +49,9 @@ class CommentApi
         $formFieldFilters = [
             'commentator_id' => FILTER_VALIDATE_INT,
         ];
-        $commentator = $app['session']->get('commentator');
+
+        $dataObject = $this->getDataObject();
+        $commentator = $dataObject->getSession()->get('commentator');
         $validCommentatorData = $this->checkDataIntegrity($commentator, $formFieldFilters);
 
         // Save data to database
@@ -56,8 +61,6 @@ class CommentApi
             'body'     => $validData['body'],
         ];
 
-        $dataObject = new CommentData($app);
-
         $comment_id = $dataObject->create($dataToInsert);
 
         return $comment_id;
@@ -66,21 +69,20 @@ class CommentApi
     /**
      * Fetch a list of comments records
      *
-     * @param $app Application
      * @param $post_id int
      *
      * @return array
      */
-    public function fetchAll(Application $app, $post_id)
+    public function fetchAll($post_id, CommentatorFactory $factory)
     {
         // Comment data
-        $commentDataObject = new CommentData($app);
+        $commentDataObject = $this->getDataObject();
         $commentRecords = $commentDataObject->fetchCommentsByPostId($post_id);
 
         $records = [];
         // Commentator data
         foreach ($commentRecords as $comment) {
-            $commentatorDataObject = new CommentatorData($app);
+            $commentatorDataObject = $factory->getNewCommentator();
             $commentator = $commentatorDataObject->fetchCommentatorBasicDataById($comment['commentator_id']);
             $records[] = array_merge($comment, $commentator);
         }
@@ -89,17 +91,40 @@ class CommentApi
     }
 
     /**
-     * Fetch a post record
+     * delete a comment record
      *
-     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
-    public function delete(Application $app, $id)
+    public function delete($id)
     {
-        $commentDataObject = new CommentData($app);
+        $commentDataObject = $this->getDataObject();
         $commentData = $commentDataObject->delete($id);
+
+        if ($commentData) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Delete all comments for a post record
+     *
+     * @param $id integer
+     *
+     * @return array
+     */
+    public function deleteAllForPost($id)
+    {
+        $dataObject = $this->getDataObject();
+
+        $formFieldFilters = [
+            'post_id' => FILTER_VALIDATE_INT,
+        ];
+        $validData = $this->checkDataIntegrity(['post_id' => $id], $formFieldFilters);
+
+        $commentData = $dataObject->deleteAllForPost($validData['post_id']);
 
         if ($commentData) {
             return true;

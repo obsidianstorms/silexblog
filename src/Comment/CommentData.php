@@ -2,8 +2,8 @@
 
 namespace BasicBlog\Comment;
 
-use BasicBlog\Common\DataInterface;
-use BasicBlog\Common\DataTrait;
+use BasicBlog\Common\ApplicationAwareInterface;
+use BasicBlog\Common\ApplicationAwareTrait;
 
 /**
  * Class CommentData
@@ -12,9 +12,9 @@ use BasicBlog\Common\DataTrait;
  *
  * @package BasicBlog\Comment
  */
-class CommentData implements DataInterface
+class CommentData implements ApplicationAwareInterface
 {
-    use DataTrait;
+    use ApplicationAwareTrait;
 
     /**
      * @var string
@@ -72,7 +72,7 @@ class CommentData implements DataInterface
     public function fetchCommentsByPostId($id)
     {
         $sql = static::SQL_SELECT_COMMENTS_OF_POST_SORTED_CREATED_ASC;
-        $data = $this->app['db']->fetchAll($sql, array((int) $id));
+        $data = $this->app['db']->fetchAll($sql, [(int) $id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 2);

@@ -2,8 +2,8 @@
 
 namespace BasicBlog\Commentator;
 
-use BasicBlog\Common\DataInterface;
-use BasicBlog\Common\DataTrait;
+use BasicBlog\Common\ApplicationAwareInterface;
+use BasicBlog\Common\ApplicationAwareTrait;
 
 /**
  * Class CommentatorData
@@ -12,9 +12,9 @@ use BasicBlog\Common\DataTrait;
  *
  * @package BasicBlog\Commentator
  */
-class CommentatorData implements DataInterface
+class CommentatorData implements ApplicationAwareInterface
 {
-    use DataTrait;
+    use ApplicationAwareTrait;
 
     /**
      * @var string
@@ -74,7 +74,7 @@ class CommentatorData implements DataInterface
         }
 
         if ($data === false) {
-            $this->app['monolog']->addInfo("Query found no matching commentators.");
+            $this->app['monolog']->addInfo('Query found no matching commentators.');
             return false;
         }
 
@@ -114,7 +114,7 @@ class CommentatorData implements DataInterface
     public function fetchCommentatorBasicDataById($id)
     {
         $sql = static::SQL_SELECT_COMMENTATOR_BASICS_BY_ID;
-        $data = $this->app['db']->fetchAssoc($sql, array((int) $id));
+        $data = $this->app['db']->fetchAssoc($sql, [(int) $id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 1);
@@ -135,7 +135,7 @@ class CommentatorData implements DataInterface
     public function fetchCommentatorFullDataById($id)
     {
         $sql = static::SQL_SELECT_COMMENTATOR_BY_ID;
-        $data = $this->app['db']->fetchAssoc($sql, array((int) $id));
+        $data = $this->app['db']->fetchAssoc($sql, [(int) $id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 2);

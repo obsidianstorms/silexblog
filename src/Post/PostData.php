@@ -2,8 +2,8 @@
 
 namespace BasicBlog\Post;
 
-use BasicBlog\Common\DataInterface;
-use BasicBlog\Common\DataTrait;
+use BasicBlog\Common\ApplicationAwareInterface;
+use BasicBlog\Common\ApplicationAwareTrait;
 
 /**
  * Class PostData
@@ -12,9 +12,9 @@ use BasicBlog\Common\DataTrait;
  *
  * @package BasicBlog\Post
  */
-class PostData implements DataInterface
+class PostData implements ApplicationAwareInterface
 {
-    use DataTrait;
+    use ApplicationAwareTrait;
 
     /**
      * @var string
@@ -63,7 +63,7 @@ class PostData implements DataInterface
      *
      * @return int
      */
-    public function create($data)
+    public function create(array $data)
     {
         $result = $this->app['db']->insert('posts', $data);
 
@@ -81,7 +81,7 @@ class PostData implements DataInterface
      *
      * @return int
      */
-    public function createContent($data)
+    public function createContent(array $data)
     {
         $result = $this->app['db']->insert('post_content', $data);
 
@@ -196,7 +196,7 @@ class PostData implements DataInterface
         }
 
         $sql = static::SQL_SELECT_SINGLE_POST_BY_ID;
-        $data = $this->app['db']->fetchAssoc($sql, array((int) $id));
+        $data = $this->app['db']->fetchAssoc($sql, [(int) $id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 6);
@@ -222,7 +222,7 @@ class PostData implements DataInterface
         }
 
         $sql = static::SQL_SELECT_POST_CONTENT_BY_ID;
-        $data = $this->app['db']->fetchAssoc($sql, array((int) $id));
+        $data = $this->app['db']->fetchAssoc($sql, [(int) $id]);
 
         if ($data === false) {
             throw new \UnexpectedValueException(static::MESSAGE_NO_RESULT_FOUND, 8);

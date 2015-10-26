@@ -15,11 +15,133 @@ use Mockery as m;
  */
 class AuthorDataTest extends PHPUnit_Framework_TestCase
 {
+
     /**
-     * Test fetchAuthorDataById() throws InvalidArgumentException if provided
-     * invalid parameter
+     * Test doAuthorsExist() returns true if records exist
      */
-    public function testFetchAuthorDataByIdThrowsInvalidArgumentException()
+    public function testDoAuthorsExistReturnsTrue()
+    {
+        $mockReturnedArray = ['key' => 'value'];
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHORS)
+            ->andReturn($mockReturnedArray);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->doAuthorsExist();
+
+        $this->assertTrue($returned);
+    }
+
+    /**
+     * Test doAuthorsExist() returns false fetch returned false
+     */
+    public function testDoAuthorsExistReturnsFalse()
+    {
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHORS)
+            ->andReturn(false);
+
+        $mockLog = m::mock(\stdClass::class);
+        $mockLog->shouldReceive('addInfo')
+            ->with('Query found no authors.');
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+        $mockApp['monolog'] = $mockLog;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->doAuthorsExist();
+
+        $this->assertFalse($returned);
+    }
+
+    /**
+     * Test doAuthorsExist() returns false if record count was zero
+     */
+    public function testDoAuthorsExistReturnsFalseIfZeroData()
+    {
+        $mockReturnedArray = [];
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHORS)
+            ->andReturn($mockReturnedArray);
+
+        $mockLog = m::mock(\stdClass::class);
+        $mockLog->shouldReceive('addInfo')
+            ->with('Query found no authors.');
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+        $mockApp['monolog'] = $mockLog;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->doAuthorsExist();
+
+        $this->assertFalse($returned);
+    }
+
+    /**
+     * Test create() throws UnexpectedValueException if sql query returns false
+     */
+    public function testCreateThrowsUnexpectedValueException()
+    {
+        $this->setExpectedException(
+            'UnexpectedValueException',
+            AuthorData::MESSAGE_NO_RESULT_FOUND,
+            0
+        );
+
+        $mockInsertData = [];
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('insert')
+            ->with('authors', $mockInsertData)
+            ->andReturn(false);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $object->create($mockInsertData);
+    }
+
+    /**
+     * Test create() returns id if sql insert succeeds
+     */
+    public function testCreateReturnsId()
+    {
+        $expectedId = 1;
+        $mockInsertData = [];
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('insert')
+            ->with('authors', $mockInsertData)
+            ->andReturn(true);
+        $mockDb->shouldReceive('lastInsertId')
+            ->andReturn($expectedId);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->create($mockInsertData);
+
+        $this->assertSame($expectedId, $returned);
+    }
+
+    /**
+     * Test fetchAuthorBasicDataById() throws InvalidArgumentException if
+     * provided invalid parameter
+     */
+    public function testFetchBasicAuthorDataByIdThrowsInvalidArgumentException()
     {
         $this->setExpectedException(
             'InvalidArgumentException',
@@ -32,19 +154,88 @@ class AuthorDataTest extends PHPUnit_Framework_TestCase
             ->makePartial();
 
         $object = new AuthorData($mockApp);
+        $object->fetchAuthorBasicDataById($mockId);
+    }
+
+    /**
+     * Test fetchBasicAuthorDataById() throws UnexpectedValueException if fail
+     * to read from database
+     */
+    public function testFetchBasicAuthorDataByIdThrowsUnexpectedValueException()
+    {
+        $this->setExpectedException(
+            'UnexpectedValueException',
+            AuthorData::MESSAGE_NO_RESULT_FOUND,
+            1
+        );
+
+        $mockId = 1;
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHOR_BASICS_BY_ID, [$mockId])
+            ->andReturn(false);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $object->fetchAuthorBasicDataById($mockId);
+    }
+
+    /**
+     * Test fetchBasicAuthorDataById() returns array if provided with id
+     */
+    public function testFetchBasicAuthorDataByIdReturnsData()
+    {
+        $mockReturnedArray = ['key' => 'value'];
+        $mockId = 1;
+        $mockDb = m::mock(\stdClass::class);
+        $mockDb->shouldReceive('fetchAssoc')
+            ->with(AuthorData::SQL_SELECT_AUTHOR_BASICS_BY_ID, [$mockId])
+            ->andReturn($mockReturnedArray);
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+        $mockApp['db'] = $mockDb;
+
+        $object = new AuthorData($mockApp);
+        $returned = $object->fetchAuthorBasicDataById($mockId);
+
+        $this->assertSame($mockReturnedArray, $returned);
+    }
+
+
+    /**
+     * Test fetchAuthorDataById() throws InvalidArgumentException if
+     * provided invalid parameter
+     */
+    public function testFetchAuthorDataByIdThrowsInvalidArgumentException()
+    {
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            AuthorData::MESSAGE_NOT_INTEGER,
+            2
+        );
+
+        $mockId = 'invalidid';
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+
+        $object = new AuthorData($mockApp);
         $object->fetchAuthorDataById($mockId);
     }
 
     /**
-     * Test fetchAuthorDataById() throws UnexpectedValueException if fail to read
-     * from database
+     * Test fetchAuthorDataById() throws UnexpectedValueException if fail
+     * to read from database
      */
     public function testFetchAuthorDataByIdThrowsUnexpectedValueException()
     {
         $this->setExpectedException(
             'UnexpectedValueException',
             AuthorData::MESSAGE_NO_RESULT_FOUND,
-            1
+            3
         );
 
         $mockId = 1;
@@ -92,7 +283,7 @@ class AuthorDataTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException(
             'InvalidArgumentException',
             AuthorData::MESSAGE_NOT_EMAIL,
-            2
+            5
         );
 
         $mockEmail = [];
@@ -112,7 +303,7 @@ class AuthorDataTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException(
             'UnexpectedValueException',
             AuthorData::MESSAGE_NO_RESULT_FOUND,
-            3
+            6
         );
 
         $mockEmail = 'samples@sample.com';
@@ -150,46 +341,4 @@ class AuthorDataTest extends PHPUnit_Framework_TestCase
 
         $this->assertSame($mockReturnedArray, $returned);
     }
-
-    /**
-     * Test doAuthorsExist() returns true if records exist
-     */
-    public function testDoAuthorsExistReturnsTrue()
-    {
-        $mockReturnedArray = ['key' => 'value'];
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAssoc')
-            ->with(AuthorData::SQL_SELECT_AUTHORS)
-            ->andReturn($mockReturnedArray);
-
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-        $mockApp['db'] = $mockDb;
-
-        $object = new AuthorData($mockApp);
-        $returned = $object->doAuthorsExist();
-
-        $this->assertTrue($returned);
-    }
-
-    /**
-     * Test doAuthorsExist() returns true if records do not exist
-     */
-    public function testDoAuthorsExistReturnsFalse()
-    {
-        $mockDb = m::mock(\stdClass::class);
-        $mockDb->shouldReceive('fetchAssoc')
-            ->with(AuthorData::SQL_SELECT_AUTHORS)
-            ->andReturn(false);
-
-        $mockApp = m::mock(\Silex\Application::class)
-            ->makePartial();
-        $mockApp['db'] = $mockDb;
-
-        $object = new AuthorData($mockApp);
-        $returned = $object->doAuthorsExist();
-
-        $this->assertFalse($returned);
-    }
-
 }

@@ -2,9 +2,11 @@
 
 namespace BasicBlog\Author;
 
-use BasicBlog\Security\Password;
-use BasicBlog\Security\ValidationTrait;
 use BasicBlog\Common\UserSessionInterface;
+use BasicBlog\Common\DataAwareInterface;
+use BasicBlog\Common\DataAwareTrait;
+use BasicBlog\Security\PasswordAwareTrait;
+use BasicBlog\Security\ValidationTrait;
 use Silex\Application;
 
 /**
@@ -14,19 +16,20 @@ use Silex\Application;
  *
  * @package BasicBlog\Author
  */
-class AuthorApi implements UserSessionInterface
+class AuthorApi implements DataAwareInterface, UserSessionInterface
 {
     use ValidationTrait;
+    use DataAwareTrait;
+    use PasswordAwareTrait;
 
     /**
-     * @param $app Application
      * @param $data
      *
      * @return bool|mixed
      */
-    public function create(Application $app, $data)
+    public function create($data)
     {
-        $dataObject = new AuthorData($app);
+        $dataObject = $this->getDataObject();
         // Author Data Object
         // Check if an author already exists, exit if one does
         if ($dataObject->doAuthorsExist()) {
@@ -45,11 +48,11 @@ class AuthorApi implements UserSessionInterface
 
         // Password matching
         if ($validData['password'] != $validData['password_confirm']) {
-            throw new \InvalidArgumentException('Password fields did not match.', 2);
+            throw new \InvalidArgumentException('Password fields did not match.', 1);
         }
 
         // Password Hashing
-        $passwordObject = new Password();
+        $passwordObject = $this->getPasswordObject();
         $validData['password_hash'] = $passwordObject->createHashedPassword($validData['password'])->getHash();
 
         $dataToInsert = [
@@ -66,12 +69,11 @@ class AuthorApi implements UserSessionInterface
     }
 
     /**
-     * @param $app Application
      * @param $data array
      *
      * @return bool|mixed
      */
-    public function login(Application $app, array $data)
+    public function login(array $data)
     {
         // Filtering Raw Data
         $formFieldFilters = [
@@ -81,11 +83,11 @@ class AuthorApi implements UserSessionInterface
         $validData = $this->checkDataIntegrity($data, $formFieldFilters);
 
         // Get records
-        $dataObject = new AuthorData($app);
+        $dataObject = $this->getDataObject();
         $record = $dataObject->fetchAuthorDataByEmail($validData['email_address']);
 
         // Password Hashing
-        $passwordObject = new Password();
+        $passwordObject = $this->getPasswordObject();
         $isValidPassword = $passwordObject->verifyPassword($validData['password'], $record['password_hash']);
 
         if (!$isValidPassword) {
@@ -99,7 +101,7 @@ class AuthorApi implements UserSessionInterface
         }
 
         // Set Session
-        $app['session']->set('author', [
+        $dataObject->getSession()->set('author', [
             'email_address' => $record['email'],
             'author_id' => $record['author_id'],
             'first_name' => $record['first_name'],
@@ -111,27 +113,27 @@ class AuthorApi implements UserSessionInterface
     }
 
     /**
-     * @param $app Application
-     *
-     * @return bool|mixed
+     * {@inheritDoc}
      */
-    public function logout(Application $app)
+    public function logout()
     {
-        $app['session']->remove('author');
-        return true;
+        $dataObject = $this->getDataObject();
+        if ($dataObject->getSession()->remove('author')) {
+            return true;
+        }
+        return false;
     }
 
     /**
      * Fetch author data, no password
      *
-     * @param $app Application
      * @param $id integer
      *
      * @return array
      */
-    public function fetchBasics(Application $app, $id)
+    public function fetchBasics($id)
     {
-        $dataObject = new AuthorData($app);
+        $dataObject = $this->getDataObject();
         $data = $dataObject->fetchAuthorBasicDataById($id);
 
         return $data;
@@ -140,14 +142,13 @@ class AuthorApi implements UserSessionInterface
     /**
      * Fetch author data
      *
-     * @param $app \Silex\Application
      * @param $id integer
      *
      * @return array
      */
-    public function fetchFull(Application $app, $id)
+    public function fetchFull($id)
     {
-        $dataObject = new AuthorData($app);
+        $dataObject = $this->getDataObject();
         $data = $dataObject->fetchAuthorDataById($id);
 
         return $data;

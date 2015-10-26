@@ -11,17 +11,14 @@ use \Silex\Application;
 interface UserSessionInterface
 {
     /**
-     * @param $app Application
      * @param $data array
      *
      * @return bool|mixed
      */
-    public function login(Application $app, array $data);
+    public function login(array $data);
 
     /**
-     * @param $app Application
-     *
-     * @return bool|mixed
+     * @return bool
      */
-    public function logout(Application $app);
+    public function logout();
 }

@@ -6,9 +6,16 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use BasicBlog\Post\PostApi;
+use BasicBlog\Post\PostData;
 use BasicBlog\Author\AuthorApi;
+use BasicBlog\Author\AuthorData;
 use BasicBlog\Comment\CommentApi;
+use BasicBlog\Comment\CommentData;
+use BasicBlog\Security\Password;
 use BasicBlog\Commentator\CommentatorApi;
+use BasicBlog\Commentator\CommentatorFactory;
+use BasicBlog\Commentator\CommentatorData;
+
 
 /**
  * Class Page
@@ -74,7 +81,7 @@ class Page
         $requestResponseCode = '200_OK';
 
         // Fetch Post list
-        $apiObject = new PostApi();
+        $apiObject = new PostApi(new PostData($app));
         try {
             $result = $apiObject->fetchAll($app);
         } catch (\InvalidArgumentException $e) {
@@ -196,14 +203,14 @@ class Page
     public function logout(Application $app)
     {
         if ($this->isAdmin($app)) {
-            $user = new AuthorApi();
+            $user = new AuthorApi(new AuthorData($app));
         } elseif ($this->isUser($app)) {
-            $user = new CommentatorApi();
+            $user = new CommentatorApi(new CommentatorData($app));
         } else {
             $app['monolog']->addError('Session found but not author nor commentator.');
             return $app->redirect('/');
         }
-        $user->logout($app);
+        $user->logout();
 
         return $app->redirect('/'); //todo: "thank you for logging out" message in session?
     }
@@ -227,9 +234,9 @@ class Page
         }
 
         // Fetch post data
-        $apiObject = new PostApi();
+        $apiObject = new PostApi(new PostData($app));
         try {
-            $post = $apiObject->fetch($app, $id);
+            $post = $apiObject->fetch($id);
             if (!$post) {
                 $requestResponseCode = 400;
             }
@@ -256,9 +263,9 @@ class Page
         }
 
         // Fetch comment data
-        $factoryComment = new CommentApi();
+        $apiCommentObject = new CommentApi(new CommentData($app));
         try {
-            $comments = $factoryComment->fetchAll($app, $post['post_id']);
+            $comments = $apiCommentObject->fetchAll($post['post_id'], new CommentatorFactory($app));
             //todo: need authorship for comments
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
@@ -322,9 +329,9 @@ class Page
         }
 
         // Fetch post data
-        $apiObject = new PostApi();
+        $apiObject = new PostApi(new PostData($app));
         try {
-            $post = $apiObject->fetch($app, $id);
+            $post = $apiObject->fetch($id);
             if (!$post) {
                 $requestResponseCode = 400;
             }
@@ -380,12 +387,12 @@ class Page
     {
         switch ($user) {
             case 'author':
-                $apiObject = new AuthorApi();
+                $apiObject = new AuthorApi(new AuthorData($app));
                 $resultFalseMessage = 'Found an existing author, unable to register another.';
                 $resultTrueMessage = 'Added author.';
                 break;
             case 'commentator':
-                $apiObject = new CommentatorApi();
+                $apiObject = new CommentatorApi(new CommentatorData($app));
                 $resultFalseMessage = 'Failed registering commentary user. Reason: unknown.';
                 $resultTrueMessage = 'Successfully registered to comment.';
                 break;
@@ -393,8 +400,10 @@ class Page
                 return $app->redirect('/');
         }
 
+        $apiObject->setPasswordObject(new Password());
+
         try {
-            $result = $apiObject->create($app, $_POST);
+            $result = $apiObject->create($_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -423,17 +432,19 @@ class Page
 
         switch ($user) {
             case 'author':
-                $apiObject = new AuthorApi();
+                $apiObject = new AuthorApi(new AuthorData($app));
                 break;
             case 'commentator':
-                $apiObject = new CommentatorApi();
+                $apiObject = new CommentatorApi(new CommentatorData($app));
                 break;
             default:
                 return $app->redirect('/');
         }
 
+        $apiObject->setPasswordObject(new Password());
+
         try {
-            $result = $apiObject->login($app, $_POST);
+            $result = $apiObject->login($_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -455,10 +466,10 @@ class Page
      */
     public function newPost(Application $app)
     {
-        $apiObject = new PostApi();
+        $apiObject = new PostApi(new PostData($app));
 
         try {
-            $result = $apiObject->create($app, $_POST);
+            $result = $apiObject->create($_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -481,10 +492,10 @@ class Page
      */
     public function newComment(Application $app, $post_id)
     {
-        $apiObject = new CommentApi();
+        $apiObject = new CommentApi(new CommentData($app));
 
         try {
-            $result = $apiObject->create($app, $post_id, $_POST);
+            $result = $apiObject->create($post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -507,10 +518,10 @@ class Page
      */
     public function editPost(Application $app, $post_id)
     {
-        $apiObject = new PostApi();
+        $apiObject = new PostApi(new PostData($app));
 
         try {
-            $result = $apiObject->update($app, $post_id, $_POST);
+            $result = $apiObject->update($post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -533,10 +544,12 @@ class Page
      */
     public function removePost(Application $app, $post_id)
     {
-        $apiObject = new PostApi();
+        $apiObject = new PostApi(new PostData($app));
+        $apiCommentObject = new CommentApi(new CommentData($app));
 
         try {
-            $result = $apiObject->delete($app, $post_id);
+            $result = $apiObject->delete($post_id);
+            $resultComment = $apiCommentObject->deleteAllForPost($post_id);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);
@@ -545,8 +558,8 @@ class Page
             return new Response($message, 400);
         }
 
-        if (!$result) {
-            return new Response('Failed to remove post.', 400);
+        if (!$result || !$resultComment) {
+            return new Response('Failed to completely remove post.', 400);
         }
         return $app->redirect('/');
     }
@@ -560,10 +573,10 @@ class Page
      */
     public function removeComment(Application $app, $post_id, $comment_id)
     {
-        $apiObject = new CommentApi();
+        $apiObject = new CommentApi(new CommentData($app));
 
         try {
-            $result = $apiObject->delete($app, $comment_id);
+            $result = $apiObject->delete($comment_id);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
             return new Response($message, 400);

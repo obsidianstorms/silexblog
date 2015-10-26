@@ -78,7 +78,7 @@ class Page
     public function index(Application $app)
     {
         // preset
-        $requestResponseCode = '200_OK';
+        $requestResponseCode = Response::HTTP_OK;
 
         // Fetch Post list
         $apiObject = new PostApi(new PostData($app));
@@ -86,10 +86,10 @@ class Page
             $result = $apiObject->fetchAll($app);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         }
 
         // Render page sections
@@ -102,7 +102,7 @@ class Page
         ];
 
         if (isset($message)) {
-            $pageArgs['message'] = $message;
+            $app['session']->getFlashBag()->add('message', $message);
         }
 
         //todo authorship display
@@ -132,7 +132,9 @@ class Page
         $isLoggedIn = $this->isLoggedIn($app);
 
         if ($isLoggedIn) {
-            return $app->redirect('/');
+            $app['session']->getFlashBag()->add('message', 'Already logged in.');
+//            return $app->redirect('/', Response::HTTP_METHOD_NOT_ALLOWED);
+            $this->index($app);
         }
 
         // Render page sections
@@ -150,12 +152,13 @@ class Page
                 $pageArgs['form'] = 'sections/form.login.commentator.twig';
                 break;
             default:
-                return $app->redirect('/');
+                $app['session']->getFlashBag()->add('message', 'Unknown user login form render error.');
+                $this->index($app);
         }
 
         // Return page
         $content = $app['twig']->render('login.twig', $pageArgs);
-        return new Response($content);
+        return new Response($content, Response::HTTP_OK);
     }
 
     /**
@@ -169,7 +172,8 @@ class Page
         $isLoggedIn = $this->isLoggedIn($app);
 
         if ($isLoggedIn) {
-            return $app->redirect('/');
+            $app['session']->getFlashBag()->add('message', 'Already logged in.');
+            return $this->index($app);
         }
 
         // Render page sections
@@ -187,7 +191,8 @@ class Page
                 $pageArgs['form'] = 'sections/form.register.commentator.twig';
                 break;
             default:
-                return $app->redirect('/');
+                $app['session']->getFlashBag()->add('message', 'Unknown user registration form render error.');
+                return $this->index($app);
         }
 
         // Return page
@@ -208,11 +213,13 @@ class Page
             $user = new CommentatorApi(new CommentatorData($app));
         } else {
             $app['monolog']->addError('Session found but not author nor commentator.');
-            return $app->redirect('/');
+            $app['session']->getFlashBag()->add('message', 'Unknown logout request made.');
+            return $this->index($app);
         }
         $user->logout();
 
-        return $app->redirect('/'); //todo: "thank you for logging out" message in session?
+        $app['session']->getFlashBag()->add('message', 'Successfully logged out.');
+        return $this->index($app);
     }
 
     /**
@@ -223,14 +230,14 @@ class Page
      */
     public function viewReadPost(Application $app, $post_id)
     {
-        $requestResponseCode = '200_OK';
+        $requestResponseCode = Response::HTTP_OK;
 
         // Filter and validation
         $id = filter_var($post_id, FILTER_VALIDATE_INT);
         if ($id === false) {
             $message = 'Queried id must be a number.';
             $app['monolog']->addError('Integer filtering returned false. ' . $message);
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         }
 
         // Fetch post data
@@ -238,7 +245,7 @@ class Page
         try {
             $post = $apiObject->fetch($id);
             if (!$post) {
-                $requestResponseCode = 400;
+                $requestResponseCode = Response::HTTP_BAD_REQUEST;
             }
         } catch (\InvalidArgumentException $e) {
             $app['monolog']->addError(
@@ -249,7 +256,7 @@ class Page
                 )
             );
             $message = 'Invalid query.';
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         } catch (\UnexpectedValueException $e) {
             $app['monolog']->addError(
                 sprintf(
@@ -259,7 +266,7 @@ class Page
                 )
             );
             $message = 'Failed to retrieve data.';
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         }
 
         // Fetch comment data
@@ -269,10 +276,10 @@ class Page
             //todo: need authorship for comments
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         }
 
         // Content Display
@@ -288,7 +295,7 @@ class Page
         ];
 
         if (isset($message)) {
-            $pageArgs['message'] = $message;
+            $app['session']->getFlashBag()->add('message', $message);
         }
 
         //todo authorship display
@@ -318,14 +325,14 @@ class Page
      */
     public function viewEditPost(Application $app, $post_id)
     {
-        $requestResponseCode = '200_OK';
+        $requestResponseCode = Response::HTTP_OK;
 
         // Filter and validation
         $id = filter_var($post_id, FILTER_VALIDATE_INT);
         if ($id === false) {
             $message = 'Queried id must be a number.';
             $app['monolog']->addError('Integer filtering returned false. ' . $message);
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         }
 
         // Fetch post data
@@ -333,7 +340,8 @@ class Page
         try {
             $post = $apiObject->fetch($id);
             if (!$post) {
-                $requestResponseCode = 400;
+                $requestResponseCode = Response::HTTP_BAD_REQUEST;
+                $message = 'Failed to find post data.';
             }
         } catch (\InvalidArgumentException $e) {
             $app['monolog']->addError(
@@ -344,7 +352,7 @@ class Page
                 )
             );
             $message = 'Invalid query.';
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         } catch (\UnexpectedValueException $e) {
             $app['monolog']->addError(
                 sprintf(
@@ -354,7 +362,7 @@ class Page
                 )
             );
             $message = 'Failed to retrieve data.';
-            $requestResponseCode = 400;
+            $requestResponseCode = Response::HTTP_BAD_REQUEST;
         }
 
         // Render page sections
@@ -366,7 +374,7 @@ class Page
         ];
 
         if (isset($message)) {
-            $pageArgs['message'] = $message;
+            $app['session']->getFlashBag()->add('message', $message);
         }
 
         if (isset($post) && is_array($post)) {
@@ -397,7 +405,8 @@ class Page
                 $resultTrueMessage = 'Successfully registered to comment.';
                 break;
             default:
-                return $app->redirect('/');
+                $app['session']->getFlashBag()->add('message', 'Unknown user creation attempt.');
+                return $this->index($app);
         }
 
         $apiObject->setPasswordObject(new Password());
@@ -405,17 +414,19 @@ class Page
         try {
             $result = $apiObject->create($_POST);
         } catch (\InvalidArgumentException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
+            $app['session']->getFlashBag()->add('message', $e->getMessage());
+            return $this->viewRegister($app, $user);return $app->redirect('/register/' . $user, Response::HTTP_TEMPORARY_REDIRECT);
         } catch (\UnexpectedValueException $e) {
-            $message = $e->getMessage();
-            return new Response($message, 400);
+            $app['session']->getFlashBag()->add('message', $e->getMessage());
+            return $this->viewRegister($app, $user);
         }
 
-        if (!$result) {
-            return new Response($resultFalseMessage, 400);
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', $resultFalseMessage);
+            return $this->index($app);
         }
-        return $app->redirect('/');
+        $app['session']->getFlashBag()->add('message', $resultTrueMessage);
+        return $this->index($app);
     }
 
     /**
@@ -426,9 +437,8 @@ class Page
      */
     public function validateLogin(Application $app, $user)
     {
-        $resultFalseMessage = 'Failed logging in. Reason: unknown.';
+        $resultFalseMessage = 'Failed logging in. Reason: ';
         $resultTrueMessage = 'Successfully logged in.';
-        //todo: session messages carry over redirects
 
         switch ($user) {
             case 'author':
@@ -438,7 +448,8 @@ class Page
                 $apiObject = new CommentatorApi(new CommentatorData($app));
                 break;
             default:
-                return $app->redirect('/');
+                $app['session']->getFlashBag()->add('message', 'Unknown user login attempt.');
+                return $this->index($app);
         }
 
         $apiObject->setPasswordObject(new Password());
@@ -447,16 +458,20 @@ class Page
             $result = $apiObject->login($_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         }
 
-        if (!$result) {
-            return new Response($resultFalseMessage, 400);
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', $resultFalseMessage);
+            if (isset($message)) {
+                $app['session']->getFlashBag()->add('message', $message);
+            }
+//            return $app->redirect($failureRedirPath, $failureRedirCode);
+            return $this->viewLogin($app, $user);
         }
-        return $app->redirect('/');
+        $app['session']->getFlashBag()->add('message', $resultTrueMessage);
+        return $this->index($app);
     }
 
     /**
@@ -472,16 +487,19 @@ class Page
             $result = $apiObject->create($_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         }
 
-        if (!$result) {
-            return new Response('Failed to add post.', 400);
+        if (isset($message)) {
+            $app['session']->getFlashBag()->add('message', $message);
         }
-        return $app->redirect('/');
+
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', 'Failed to add post.');
+            return $this->index($app);
+        }
+        return $this->index($app);
     }
 
     /**
@@ -498,16 +516,20 @@ class Page
             $result = $apiObject->create($post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         }
 
-        if (!$result) {
-            return new Response('Failed to add comment.', 400);
+        if (isset($message)) {
+            $app['session']->getFlashBag()->add('message', $message);
         }
-        return $app->redirect('/post/' . $post_id);
+
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', 'Failed to add comment.');
+            return $this->viewReadPost($app, $post_id);
+        }
+        $app['session']->getFlashBag()->add('message', 'Comment added.');
+        return $this->viewReadPost($app, $post_id);
     }
 
     /**
@@ -524,16 +546,20 @@ class Page
             $result = $apiObject->update($post_id, $_POST);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         }
 
-        if (!$result) {
-            return new Response('Failed to update post.', 400);
+        if (isset($message)) {
+            $app['session']->getFlashBag()->add('message', $message);
         }
-        return $app->redirect('/post/' . $post_id);
+
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', 'Failed to update post.');
+            return $this->viewReadPost($app, $post_id);
+        }
+        $app['session']->getFlashBag()->add('message', 'Post edited.');
+        return $this->viewReadPost($app, $post_id);
     }
 
     /**
@@ -552,16 +578,20 @@ class Page
             $resultComment = $apiCommentObject->deleteAllForPost($post_id);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         }
 
-        if (!$result || !$resultComment) {
-            return new Response('Failed to completely remove post.', 400);
+        if (isset($message)) {
+            $app['session']->getFlashBag()->add('message', $message);
         }
-        return $app->redirect('/');
+
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', 'Failed to completely remove post.');
+            return $this->index($app);
+        }
+        $app['session']->getFlashBag()->add('message', 'Deleted post.');
+        return $this->index($app);
     }
 
     /**
@@ -579,15 +609,19 @@ class Page
             $result = $apiObject->delete($comment_id);
         } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         } catch (\UnexpectedValueException $e) {
             $message = $e->getMessage();
-            return new Response($message, 400);
         }
 
-        if (!$result) {
-            return new Response('Failed to remove comment.', 400);
+        if (isset($message)) {
+            $app['session']->getFlashBag()->add('message', $message);
         }
-        return $app->redirect('/post/' . $post_id);
+
+        if (!isset($result) || !$result) {
+            $app['session']->getFlashBag()->add('message', 'Failed to remove comment.');
+            return $this->viewReadPost($app, $post_id);
+        }
+        $app['session']->getFlashBag()->add('message', 'Deleted comment.');
+        return $this->viewReadPost($app, $post_id);
     }
 }

@@ -4,10 +4,6 @@
 {% block sub_title subtitle %}
 
 {% block content %}
-    {% if message %}
-        {% include 'sections/error.twig' with message %}
-    {% endif %}
-
     {% if post %}
         {% include 'sections/view.post.twig' with post %}
     {% endif %}

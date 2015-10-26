@@ -42,6 +42,10 @@ class CommentatorApi implements DataAwareInterface, UserSessionInterface
             throw new \InvalidArgumentException('Password fields did not match.', 1);
         }
 
+        if (strlen($validData['username']) == 0) {
+            throw new \InvalidArgumentException('Username field is empty.', 2);
+        }
+
         $dataObject = $this->getDataObject();
         // Commentator Data Object
         // Check if an username already exists, exit if one does

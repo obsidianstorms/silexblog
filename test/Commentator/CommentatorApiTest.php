@@ -45,6 +45,34 @@ class CommentatorApiTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test create() method throws InvalidArgumentException if password fields
+     * don't match
+     */
+    public function testCreateThrowsInvalidArgumentExceptionIfUsernameMissing()
+    {
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            'Username field is empty.',
+            2
+        );
+
+        $mockInsertData = [
+            'username' => '',
+            'password' => 'somepassword',
+            'password_confirm' => 'somepassword',
+
+        ];
+
+        $mockApp = m::mock(\Silex\Application::class)
+            ->makePartial();
+
+        $mockDataObject = m::mock(CommentatorData::class, [$mockApp]);
+
+        $object = new CommentatorApi($mockDataObject);
+        $object->create($mockInsertData);
+    }
+
+    /**
      * Test create() returns false if username already exists
      */
     public function testCreateReturnsFalseIfUsernameExists()

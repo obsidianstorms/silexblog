@@ -4,6 +4,10 @@ body {
     font-size: 12px;
 }
 
+.error {
+    color: #FF3333;
+}
+
 form {
     margin: 3px;
     border: 1px solid #CCCCCC;

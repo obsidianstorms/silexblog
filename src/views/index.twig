@@ -3,10 +3,6 @@
 {% block sub_title 'Home - ' %}
 
 {% block content %}
-    {% if message %}
-        {% include 'sections/error.twig' with message %}
-    {% endif %}
-
     {% if admin %}
         {% include 'sections/form.add.post.twig' %}
     {% endif %}

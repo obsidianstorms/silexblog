@@ -12,6 +12,9 @@
     {% block menu %}
         {% include 'sections/menu.twig' %}
     {% endblock menu %}
+    {% block messages %}
+        {% include 'sections/error.twig' %}
+    {% endblock messages %}
     <h1>BasicBlog</h1>
     {% block content %}
         Welcome to BasicBlog.

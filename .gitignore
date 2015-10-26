@@ -1,3 +1,4 @@
 phpunit.phar
 /logs
 *local*
+/test/Page/PageTest.php

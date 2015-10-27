@@ -415,7 +415,7 @@ class Page
             $result = $apiObject->create($_POST);
         } catch (\InvalidArgumentException $e) {
             $app['session']->getFlashBag()->add('message', $e->getMessage());
-            return $this->viewRegister($app, $user);return $app->redirect('/register/' . $user, Response::HTTP_TEMPORARY_REDIRECT);
+            return $this->viewRegister($app, $user);
         } catch (\UnexpectedValueException $e) {
             $app['session']->getFlashBag()->add('message', $e->getMessage());
             return $this->viewRegister($app, $user);

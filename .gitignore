@@ -2,3 +2,4 @@ phpunit.phar
 /logs
 config.local.php
 /test/Page/PageTest.php
+EXPECTATIONS_README.md
